@@ -1,11 +1,11 @@
-package profile
+package utils
 
 import (
 	"fmt"
 	"time"
 )
 
-func avg(items []time.Duration) time.Duration {
+func Avg(items []time.Duration) time.Duration {
 	var sum time.Duration
 	for _, item := range items {
 		sum += item
@@ -14,7 +14,7 @@ func avg(items []time.Duration) time.Duration {
 }
 
 // human readable format
-func toH(bytes uint64) string {
+func ToH(bytes uint64) string {
 	switch {
 	case bytes < 1024:
 		return fmt.Sprintf("%dB", bytes)
@@ -28,7 +28,7 @@ func toH(bytes uint64) string {
 }
 
 // short string format
-func toS(d time.Duration) string {
+func ToS(d time.Duration) string {
 
 	u := uint64(d)
 	if u < uint64(time.Second) {

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/idealeak/goserver/core/logger"
+	"github.com/idealeak/goserver/core/utils"
 )
 
 type TimeWatcher struct {
@@ -23,7 +24,7 @@ func (this *TimeWatcher) Stop() {
 	defer FreeWatcher(this)
 	d := time.Now().Sub(this.tStart)
 	if Config.SlowMS > 0 && d >= time.Duration(Config.SlowMS)*time.Millisecond {
-		logger.Logger.Warnf("###slow timespan name: %s  take:%s", strings.ToLower(this.name), toS(d))
+		logger.Logger.Warnf("###slow timespan name: %s  take:%s", strings.ToLower(this.name), utils.ToS(d))
 	}
 	TimeStatisticMgr.addStatistic(this.name, d)
 }

@@ -1,4 +1,4 @@
-package profile
+package utils
 
 import (
 	"fmt"
@@ -41,8 +41,6 @@ func ProcessInput(input string, w io.Writer) {
 		MemProf()
 	case "gc summary":
 		PrintGCSummary(w)
-	case "logic statistics":
-		PrintLogicStatisics(w)
 	}
 }
 
@@ -87,27 +85,23 @@ func printGC(memStats *runtime.MemStats, gcstats *debug.GCStats, w io.Writer) {
 
 		fmt.Fprintf(w, "NumGC:%d Pause:%s Pause(Avg):%s Overhead:%3.2f%% Alloc:%s Sys:%s Alloc(Rate):%s/s Histogram:%s %s %s \n",
 			gcstats.NumGC,
-			toS(lastPause),
-			toS(avg(gcstats.Pause)),
+			ToS(lastPause),
+			ToS(Avg(gcstats.Pause)),
 			overhead,
-			toH(memStats.Alloc),
-			toH(memStats.Sys),
-			toH(uint64(allocatedRate)),
-			toS(gcstats.PauseQuantiles[94]),
-			toS(gcstats.PauseQuantiles[98]),
-			toS(gcstats.PauseQuantiles[99]))
+			ToH(memStats.Alloc),
+			ToH(memStats.Sys),
+			ToH(uint64(allocatedRate)),
+			ToS(gcstats.PauseQuantiles[94]),
+			ToS(gcstats.PauseQuantiles[98]),
+			ToS(gcstats.PauseQuantiles[99]))
 	} else {
 		// while GC has disabled
 		elapsed := time.Now().Sub(startTime)
 		allocatedRate := float64(memStats.TotalAlloc) / elapsed.Seconds()
 
 		fmt.Fprintf(w, "Alloc:%s Sys:%s Alloc(Rate):%s/s\n",
-			toH(memStats.Alloc),
-			toH(memStats.Sys),
-			toH(uint64(allocatedRate)))
+			ToH(memStats.Alloc),
+			ToH(memStats.Sys),
+			ToH(uint64(allocatedRate)))
 	}
-}
-
-func PrintLogicStatisics(w io.Writer) {
-	TimeStatisticMgr.dump(w)
 }

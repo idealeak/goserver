@@ -10,7 +10,6 @@ import (
 
 	"github.com/idealeak/goserver/core/logger"
 	"github.com/idealeak/goserver/core/module"
-	"github.com/idealeak/goserver/core/profile"
 	"github.com/idealeak/goserver/core/schedule"
 	"github.com/idealeak/goserver/core/utils"
 )
@@ -43,7 +42,7 @@ func ProfIndex(rw http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	command := r.Form.Get("command")
 	if command != "" {
-		profile.ProcessInput(command, rw)
+		utils.ProcessInput(command, rw)
 	} else {
 		rw.Write([]byte("request url like '/prof?command=lookup goroutine'\n"))
 		rw.Write([]byte("the command have below types:\n"))

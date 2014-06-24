@@ -6,6 +6,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/idealeak/goserver/core/utils"
 )
 
 var TimeStatisticMgr = &timeStatisticMgr{
@@ -63,6 +65,6 @@ func (this *timeStatisticMgr) dump(w io.Writer) {
 	defer this.l.Unlock()
 	fmt.Fprintf(w, "| % -30s| % -10s | % -16s | % -16s | % -16s | % -16s |\n", "name", "times", "used", "max used", "min used", "avg used")
 	for k, v := range this.elements {
-		fmt.Fprintf(w, "| % -30s| % -10d | % -16s | % -16s | % -16s | % -16s |\n", strings.ToLower(k), v.times, toS(v.totalTick), toS(v.maxTick), toS(v.minTick), toS(time.Duration(int64(v.totalTick)/v.times)))
+		fmt.Fprintf(w, "| % -30s| % -10d | % -16s | % -16s | % -16s | % -16s |\n", strings.ToLower(k), v.times, utils.ToS(v.totalTick), utils.ToS(v.maxTick), utils.ToS(v.minTick), utils.ToS(time.Duration(int64(v.totalTick)/v.times)))
 	}
 }
