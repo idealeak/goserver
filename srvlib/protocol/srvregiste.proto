@@ -1,0 +1,11 @@
+package protocol;
+
+import "protocol/packetid.proto";
+
+message SSSrvRegiste {
+	required SrvlibPacketID PacketId = 1 [default=PACKET_SS_REGISTE];
+	required int32 Id = 2;
+	required int32 Type = 3;
+	required int32 AreaId = 4;
+	required string Name = 5;
+}

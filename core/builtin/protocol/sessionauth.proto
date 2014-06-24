@@ -1,0 +1,9 @@
+package protocol;
+
+import "protocol/packetid.proto";
+
+message SSPacketAuth {
+	required CoreBuiltinPacketID PacketId = 1 [default=PACKET_SS_AUTH];
+	required string AuthKey = 2;
+	required int64 Timestamp = 3;
+}

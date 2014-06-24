@@ -1,0 +1,36 @@
+package protocol;
+
+import "protocol/packetid.proto";
+
+message TransactStart {
+	required CoreBuiltinPacketID PacketId = 1 [default=PACKET_SS_TX_START];
+	required TransactParam MyTNP = 2;
+	required TransactParam ParenTNP = 3;
+	optional bytes CustomData = 4;
+}
+
+message TransactCtrlCmd {
+	required CoreBuiltinPacketID PacketId = 1 [default=PACKET_SS_TX_CMD];
+	required int64 TId = 2;
+	required int32 Cmd = 3;
+}
+
+message TransactResult {
+	required CoreBuiltinPacketID PacketId = 1 [default=PACKET_SS_TX_RESULT];
+	required int64 MyTId = 2;
+	required int64 ChildTId = 3;
+	required int32 RetCode = 4;
+	optional bytes CustomData = 5;
+}
+
+message TransactParam {
+	required int64 TransNodeID = 1;
+	required int32 TransType = 2;
+	required int32 OwnerType = 3;
+	required int32 OwnerID = 4;
+	required int32 SkeletonID = 5;
+	required int32 LevelNo = 6;
+	required int32 AreaID = 7;
+	required int64 TimeOut = 8;
+	required int32 TransCommitType = 9;
+}

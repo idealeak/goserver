@@ -1,0 +1,49 @@
+{
+    "netlib": {
+	"SrvInfo":
+	{
+		"Name": "TxServer2",
+		"Type":	2,
+		"Id": 202,
+		"AreaID": 1,
+		"Banner": [
+				"=================",
+				"tx server 2",
+				"================="
+			]
+	},
+
+	"IoServices": [
+		{
+			"Id": 202,
+			"Type": 2,
+			"AreaId": 1,
+			"Name": "TxService2",
+			"Ip": "127.0.0.1",
+			"Port": 2347,
+			"MaxDone": 20,
+			"MaxPend": 20,
+			"MaxPacket": 65535,
+			"MaxConn": 10,
+			"RcvBuff": 8192,
+			"SndBuff": 8192,
+			"WriteTimeout": 30,
+			"ReadTimeout": 30,
+			"IsInnerLink": true,
+			"NoDelay": true,
+			"SupportFragment": true,
+			"AuthKey": "1234567890",
+			"FilterChain": ["session-filter-trace","session-filter-auth","session-filter-keepalive"],
+			"HandlerChain": ["session-srv-registe"]
+		}
+	]
+    },
+
+	"tx": {
+		"TxSkeletonName": "github.com/idealeak/goserver/srvlib/txcommskeleton"
+	},
+	
+    "core": {
+    	"MaxProcs": 4
+    }
+}

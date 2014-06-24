@@ -1,0 +1,6 @@
+package protocol;
+
+enum PacketID {	
+	PACKET_CS_PING	= 1000;
+	PACKET_SC_PONG	= 1001;
+}

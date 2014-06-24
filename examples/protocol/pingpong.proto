@@ -1,0 +1,15 @@
+package protocol;
+
+import "protocol/packetid.proto";
+
+message CSPacketPing {
+	required PacketID PacketId = 1 [default=PACKET_CS_PING];
+	required int64 TimeStamb = 2;
+	required bytes Message = 3;
+}
+
+message SCPacketPong {
+	required PacketID PacketId = 1 [default=PACKET_SC_PONG];
+	required int64 TimeStamb = 2;
+	required bytes Message = 3;
+}

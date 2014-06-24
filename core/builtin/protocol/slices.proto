@@ -1,0 +1,11 @@
+package protocol;
+
+import "protocol/packetid.proto";
+
+message SSPacketSlices {
+	required CoreBuiltinPacketID PacketId = 1 [default=PACKET_SS_SLICES];
+	required int32 SeqNo = 2;
+	required int32 TotalSize = 3;
+	required int32 Offset = 4;
+	required bytes PacketData = 5;
+}

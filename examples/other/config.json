@@ -1,0 +1,50 @@
+{
+    "netlib": {
+		"SrvInfo":
+			{
+				"Name": "TimerServer",
+				"Banner": [
+						"=================",
+						"timer server",
+						"================="
+					]
+			}
+    },
+	
+    "core": {
+    "MaxProcs": 4,
+    "SupportCmdLine":true,
+    "SupportSignal": true,
+    "SupportAdmin": true,
+    "SlowMS": 200,
+	"Object": {
+		"QueueBacklog": 1024,
+		"MaxDone": 1024,
+		"Interval": 100000000
+		},
+
+	"Executor": {
+		"Object": {
+			"QueueBacklog": 1024,
+			"MaxDone": 1024,
+			"Interval": 0
+			},
+		"Worker": {
+			"WorkerCnt": 8,
+			"Object": {
+				"QueueBacklog": 1024,
+				"MaxDone": 1024,
+				"Interval": 0
+			}
+		}
+	},
+
+	"Timer": {
+		"Object": {
+			"QueueBacklog": 1024,
+			"MaxDone": 1024,
+			"Interval": 100000000
+		}
+	}
+    }
+}

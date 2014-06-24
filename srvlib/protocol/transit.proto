@@ -1,0 +1,11 @@
+package protocol;
+
+import "protocol/packetid.proto";
+
+message SSPacketTransit {
+	required SrvlibPacketID PacketId = 1 [default=PACKET_SS_TRANSIT];
+	required int32 SArea = 2;
+	required int32 SType = 3;
+	required int32 SId = 4;
+	required bytes Data = 5;
+}

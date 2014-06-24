@@ -1,0 +1,23 @@
+package protocol;
+
+import "protocol/packetid.proto";
+
+message SSPacketBroadcast {
+	required SrvlibPacketID PacketId = 1 [default=PACKET_SS_BROADCAST];
+	required BCSessionUnion SessParam = 2;
+	required bytes Data = 3;
+}
+
+message BCSessionUnion {
+	optional BCClientSession Bccs = 1;
+	optional BCServerSession Bcss = 2;
+}
+
+message BCClientSession {
+	optional bool Dummy = 1;
+}
+
+message BCServerSession {
+	optional int32 SArea = 1;
+	optional int32 SType = 2;
+}
