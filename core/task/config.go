@@ -37,6 +37,7 @@ func (c *Configuration) Init() error {
 	if c.Worker.WorkerCnt <= 0 {
 		c.Worker.WorkerCnt = 8
 	}
+	TaskExecutor.Start()
 	return nil
 }
 

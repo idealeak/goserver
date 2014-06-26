@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/idealeak/goserver/core/logger"
-	"github.com/idealeak/goserver/core/module"
 	"github.com/idealeak/goserver/core/schedule"
 	"github.com/idealeak/goserver/core/utils"
 )
@@ -119,20 +118,16 @@ func (admin *AdminApp) Route(pattern string, f http.HandlerFunc) {
 
 // Start AdminApp http server.
 // Its addr is defined in configuration file as adminhttpaddr and adminhttpport.
-func (admin *AdminApp) Start() {
+func (admin *AdminApp) Start(AdminHttpAddr string, AdminHttpPort int) {
 	if len(schedule.AdminTaskList) > 0 {
 		schedule.StartTask()
-	}
-
-	if !Config.SupportAdmin {
-		return
 	}
 
 	for p, f := range admin.routers {
 		http.Handle(p, f)
 	}
 
-	addr := fmt.Sprintf("%s:%d", Config.AdminHttpAddr, Config.AdminHttpPort)
+	addr := fmt.Sprintf("%s:%d", AdminHttpAddr, AdminHttpPort)
 	l, err := net.Listen("tcp", addr)
 	if err != nil {
 		logger.Logger.Critical("Admin Listen: ", err)
@@ -142,13 +137,13 @@ func (admin *AdminApp) Start() {
 		logger.Logger.Critical("Admin Listen Addr error")
 		return
 	}
-	if len(Config.AdminHttpAddr) == 0 || Config.AdminHttpAddr == "0" {
-		Config.AdminHttpAddr = "127.0.0.1"
+	if len(AdminHttpAddr) == 0 || AdminHttpAddr == "0" {
+		AdminHttpAddr = "127.0.0.1"
 	} else {
-		Config.AdminHttpAddr = ipAndPort[0]
+		AdminHttpAddr = ipAndPort[0]
 	}
 
-	Config.AdminHttpPort, _ = strconv.Atoi(ipAndPort[1])
+	AdminHttpPort, _ = strconv.Atoi(ipAndPort[1])
 	logger.Logger.Infof("Admin Serve: %s", l.Addr())
 
 	go func() {
@@ -170,6 +165,4 @@ func init() {
 	MyAdminApp.Route("/task", TaskStatus)
 	MyAdminApp.Route("/runtask", RunTask)
 	MyAdminApp.Route("/listconf", ListConf)
-
-	module.RegistePreloadModule(MyAdminApp, 0)
 }

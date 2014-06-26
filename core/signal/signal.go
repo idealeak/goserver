@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/idealeak/goserver/core/logger"
-	"github.com/idealeak/goserver/core/module"
 )
 
 var SignalHandlerModule = NewSignalHandler()
@@ -78,14 +77,4 @@ func (this *SignalHandler) ProcessSignal() {
 			}
 		}
 	}
-}
-
-func (this *SignalHandler) Start() {
-	if Config.SupportSignal {
-		go this.ProcessSignal()
-	}
-}
-
-func init() {
-	module.RegistePreloadModule(SignalHandlerModule, 0)
 }

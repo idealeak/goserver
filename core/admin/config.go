@@ -17,6 +17,9 @@ func (c *Configuration) Name() string {
 }
 
 func (c *Configuration) Init() error {
+	if c.SupportAdmin {
+		MyAdminApp.Start(c.AdminHttpAddr, c.AdminHttpPort)
+	}
 	return nil
 }
 

@@ -1,5 +1,9 @@
 package core
 
+import (
+	"runtime"
+)
+
 var Config = Configuration{}
 
 type Configuration struct {
@@ -14,6 +18,7 @@ func (c *Configuration) Init() error {
 	if c.MaxProcs <= 0 {
 		c.MaxProcs = 1
 	}
+	runtime.GOMAXPROCS(c.MaxProcs)
 	return nil
 }
 

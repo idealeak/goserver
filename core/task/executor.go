@@ -6,7 +6,6 @@ import (
 	"github.com/idealeak/goserver/core"
 	"github.com/idealeak/goserver/core/basic"
 	"github.com/idealeak/goserver/core/logger"
-	"github.com/idealeak/goserver/core/module"
 	"github.com/stathat/consistent"
 )
 
@@ -69,8 +68,4 @@ func (e *Executor) GetWorker(name string) *Worker {
 		return w
 	}
 	return nil
-}
-
-func init() {
-	module.RegistePreloadModule(TaskExecutor, 1)
 }

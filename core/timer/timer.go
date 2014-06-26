@@ -7,7 +7,6 @@ import (
 	"github.com/idealeak/goserver/core"
 	"github.com/idealeak/goserver/core/basic"
 	"github.com/idealeak/goserver/core/logger"
-	"github.com/idealeak/goserver/core/module"
 )
 
 var (
@@ -80,7 +79,3 @@ func (tm *TimerMgr) OnTick() {
 func (tm *TimerMgr) OnStart() {}
 
 func (tm *TimerMgr) OnStop() {}
-
-func init() {
-	module.RegistePreloadModule(TimerModule, 0)
-}
