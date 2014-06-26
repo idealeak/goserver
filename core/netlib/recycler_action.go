@@ -1,7 +1,7 @@
 package netlib
 
 import (
-	"github.com/idealeak/microcore/container/recycler"
+	"github.com/idealeak/goserver/core/container/recycler"
 )
 
 const (
