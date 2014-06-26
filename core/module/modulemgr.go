@@ -141,7 +141,7 @@ func (this *ModuleMgr) Start() *utils.Waitor {
 
 	this.state = ModuleStateInit
 
-	return basic.Waitor
+	return this.Object.Waitor
 }
 
 func (this *ModuleMgr) Close() {

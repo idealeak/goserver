@@ -2,6 +2,7 @@ package core
 
 import (
 	"github.com/idealeak/goserver/core/basic"
+	"github.com/idealeak/goserver/core/utils"
 )
 
 var (
@@ -26,6 +27,7 @@ func (ctx *Ctx) init() {
 			QueueBacklog: 1024,
 		},
 		nil)
+	ctx.Object.Waitor = utils.NewWaitor()
 	ctx.UserData = ctx
 }
 

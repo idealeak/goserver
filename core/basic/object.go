@@ -12,7 +12,7 @@ const (
 )
 
 var (
-	Waitor = utils.NewWaitor()
+//Waitor = utils.NewWaitor()
 )
 
 //  Base class for need alone goroutine objects
@@ -21,6 +21,7 @@ var (
 //		establish a tree structure between objects
 //		asynchronous message queue
 type Object struct {
+	*utils.Waitor
 	//  Identify
 	Id int
 
@@ -61,6 +62,9 @@ type Object struct {
 	gid int
 
 	//
+	waitActive chan struct{}
+
+	//
 	Consumer <-chan Command
 	Producer chan<- Command
 	//	UserData
@@ -75,11 +79,12 @@ type Object struct {
 
 func NewObject(id int, name string, opt Options, sinker Sinker) *Object {
 	o := &Object{
-		Id:        id,
-		Name:      name,
-		opt:       opt,
-		sinker:    sinker,
-		tLastTick: time.Now(),
+		Id:         id,
+		Name:       name,
+		opt:        opt,
+		sinker:     sinker,
+		tLastTick:  time.Now(),
+		waitActive: make(chan struct{}),
 	}
 
 	o.init()
@@ -95,6 +100,11 @@ func (o *Object) init() {
 	}
 }
 
+//	Active inner goroutine
+func (o *Object) Active() {
+	o.waitActive <- struct{}{}
+}
+
 //  Launch the supplied object and become its owner.
 func (o *Object) LaunchChild(c *Object) {
 	if c == nil {
@@ -106,7 +116,8 @@ func (o *Object) LaunchChild(c *Object) {
 	}
 
 	c.owner = o
-
+	c.Waitor = o.Waitor
+	c.Active()
 	c.safeStart()
 
 	//  Take ownership of the object.
@@ -232,8 +243,14 @@ func (o *Object) ProcessCommand() {
 		tickMode bool
 	)
 
-	Waitor.Add(1)
-	defer Waitor.Done()
+	//wait for active
+	<-o.waitActive
+
+	//deamon or no
+	if o.Waitor != nil {
+		o.Waitor.Add(1)
+		defer o.Waitor.Done()
+	}
 
 	if o.opt.Interval > 0 && o.sinker != nil && o.timer == nil {
 		o.timer = time.NewTicker(o.opt.Interval)

@@ -19,6 +19,7 @@ func (c *Configuration) Init() error {
 		c.MaxProcs = 1
 	}
 	runtime.GOMAXPROCS(c.MaxProcs)
+	AppCtx.Object.Active()
 	return nil
 }
 
