@@ -73,7 +73,7 @@ func (this *SignalHandler) ProcessSignal() {
 					hk.Process(s, hv)
 				}
 			} else {
-				logger.Logger.Info("-------->receive UnHandle Signal:", s)
+				logger.Info("-------->receive UnHandle Signal:", s)
 			}
 		}
 	}

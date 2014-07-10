@@ -20,7 +20,7 @@ func (this *TxResultPacketFactory) CreatePacket() interface{} {
 }
 
 func (this *TxResultHandler) Process(session *netlib.Session, data interface{}) error {
-	logger.Logger.Trace("TxResultHandler.Process")
+	logger.Trace("TxResultHandler.Process")
 	if tr, ok := data.(*protocol.TransactResult); ok {
 		if !transact.ProcessTransResult(transact.TransNodeID(tr.GetMyTId()), transact.TransNodeID(tr.GetChildTId()), int(tr.GetRetCode()), tr.GetCustomData()) {
 			return nil
@@ -43,7 +43,7 @@ func ContructTxResultPacket(parent, me *transact.TransNodeParam, tr *transact.Tr
 	if tr.RetFiels != nil {
 		b, err := netlib.MarshalPacketNoPackId(tr.RetFiels)
 		if err != nil {
-			logger.Logger.Info("ContructTxResultPacket Marshal UserData error:", err)
+			logger.Info("ContructTxResultPacket Marshal UserData error:", err)
 		} else {
 			packet.CustomData = b
 		}

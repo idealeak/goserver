@@ -46,7 +46,7 @@ func (this *Configuration) Init() error {
 				proto.SetDefaults(packet)
 				s.Send(packet)
 			} else {
-				logger.Logger.Info("SessionAuthHandler auth failed")
+				logger.Info("SessionAuthHandler auth failed")
 			}
 		}
 	}
@@ -93,7 +93,7 @@ func (t *openTimer) OnTimer(h timer.TimerHandle, ud interface{}) bool {
 	if StartCnt >= Config.Count {
 
 	} else {
-		logger.Logger.Info("Start ", StartCnt, " Times Connect")
+		logger.Info("Start ", StartCnt, " Times Connect")
 		cfg := Config.Connects
 		cfg.Id = cfg.Id - StartCnt
 		netlib.Connect(core.CoreObject(), &cfg)

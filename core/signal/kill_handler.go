@@ -11,7 +11,7 @@ type KillSignalHandler struct {
 }
 
 func (ish *KillSignalHandler) Process(s os.Signal, ud interface{}) error {
-	logger.Logger.Info("Receive Kill signal, process be close")
+	logger.Info("Receive Kill signal, process be close")
 	module.Stop()
 	return nil
 }

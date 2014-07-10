@@ -22,7 +22,7 @@ func (this *TxStartPacketFactory) CreatePacket() interface{} {
 }
 
 func (this *TxStartHandler) Process(session *netlib.Session, data interface{}) error {
-	logger.Logger.Trace("TxStartHandler.Process")
+	logger.Trace("TxStartHandler.Process")
 	if ts, ok := data.(*protocol.TransactStart); ok {
 		netptnp := ts.GetParenTNP()
 		if netptnp == nil {
@@ -97,7 +97,7 @@ func ContructTxStartPacket(parent, me *transact.TransNodeParam, ud interface{}) 
 	if ud != nil {
 		b, err := netlib.MarshalPacketNoPackId(ud)
 		if err != nil {
-			logger.Logger.Info("ContructTxStartPacket Marshal UserData error:", err)
+			logger.Info("ContructTxStartPacket Marshal UserData error:", err)
 		} else {
 			packet.CustomData = b
 		}

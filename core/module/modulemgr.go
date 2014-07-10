@@ -124,13 +124,13 @@ func (this *ModuleMgr) UnregistePreloadModule(m PreloadModule) {
 }
 
 func (this *ModuleMgr) Start() *utils.Waitor {
-	logger.Logger.Trace("Startup PreloadModules")
+	logger.Trace("Startup PreloadModules")
 	for e := this.preloadModule.Front(); e != nil; e = e.Next() {
 		if me, ok := e.Value.(*PreloadModuleEntity); ok {
 			me.module.Start()
 		}
 	}
-	logger.Logger.Trace("Startup PreloadModules [ok]")
+	logger.Trace("Startup PreloadModules [ok]")
 
 	this.Object = basic.NewObject(core.ObjId_CoreId,
 		"core",
@@ -149,13 +149,13 @@ func (this *ModuleMgr) Close() {
 }
 
 func (this *ModuleMgr) init() {
-	logger.Logger.Trace("Start Initialize Modules")
-	defer logger.Logger.Trace("Start Initialize Modules [ok]")
+	logger.Trace("Start Initialize Modules")
+	defer logger.Trace("Start Initialize Modules [ok]")
 	for e := this.modules.Front(); e != nil; e = e.Next() {
 		if me, ok := e.Value.(*ModuleEntity); ok && !me.quited {
-			logger.Logger.Trace(me.module.ModuleName(), " Init...")
+			logger.Trace(me.module.ModuleName(), " Init...")
 			me.module.Init()
-			logger.Logger.Trace(me.module.ModuleName(), " Init [ok]")
+			logger.Trace(me.module.ModuleName(), " Init [ok]")
 		}
 	}
 	this.state = ModuleStateRun
@@ -189,7 +189,7 @@ func (this *ModuleMgr) shutdown() {
 func (this *ModuleMgr) checkShutdown() bool {
 	select {
 	case param := <-this.waitShutAct:
-		logger.Logger.Trace(param, " shutdowned")
+		logger.Trace(param, " shutdowned")
 		if name, ok := param.(string); ok {
 			me := this.getModuleEntityByName(name)
 			if me != nil {

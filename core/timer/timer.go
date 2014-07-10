@@ -29,8 +29,8 @@ func NewTimerMgr() *TimerMgr {
 }
 
 func (tm *TimerMgr) Start() {
-	logger.Logger.Trace("Timer Start")
-	defer logger.Logger.Trace("Timer Start [ok]")
+	logger.Trace("Timer Start")
+	defer logger.Trace("Timer Start [ok]")
 
 	tm.Object = basic.NewObject(core.ObjId_TimerId,
 		"timer",

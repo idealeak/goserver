@@ -52,10 +52,10 @@ func (a *Acceptor) start() (err error) {
 	service := a.sc.Ip + ":" + strconv.Itoa(int(a.sc.Port))
 	a.listener, err = net.Listen("tcp", service)
 	if err != nil {
-		logger.Logger.Error(err)
+		logger.Error(err)
 		return err
 	}
-	logger.Logger.Info(a.sc.Name, " listen at ", a.listener.Addr().String())
+	logger.Info(a.sc.Name, " listen at ", a.listener.Addr().String())
 
 	go a.acceptRoutine()
 	go a.sessionRoutine()
@@ -105,7 +105,7 @@ func (a *Acceptor) acceptRoutine() {
 	for !a.quit {
 		conn, err := a.listener.Accept()
 		if err != nil {
-			logger.Logger.Warn(err)
+			logger.Warn(err)
 			continue
 		}
 		a.connChan <- conn

@@ -88,16 +88,16 @@ func (this *transactCoordinater) spawnTransNodeID() TransNodeID {
 
 func (this *transactCoordinater) createTransNode(tnp *TransNodeParam, ud interface{}, timeout time.Duration) *TransNode {
 	if this == nil || tnp == nil {
-		logger.Logger.Warn("transactCoordinater.createTransNode failed, Null Pointer")
+		logger.Warn("transactCoordinater.createTransNode failed, Null Pointer")
 		return nil
 	}
 	if this.quit {
-		logger.Logger.Warn("transactCoordinater.createTransNode failed, module shutdowning")
+		logger.Warn("transactCoordinater.createTransNode failed, module shutdowning")
 		return nil
 	}
 	transHandler := GetHandler(tnp.Tt)
 	if transHandler == nil {
-		logger.Logger.Warn("transactCoordinater.createTransNode failed, TransNodeParam=%v", *tnp)
+		logger.Warn("transactCoordinater.createTransNode failed, TransNodeParam=%v", *tnp)
 		return nil
 	}
 
@@ -154,7 +154,7 @@ func (this *transactCoordinater) ProcessTransResult(tid, childtid TransNodeID, r
 
 func (this *transactCoordinater) ProcessTransStart(parentTnp, myTnp *TransNodeParam, ud interface{}, timeout time.Duration) bool {
 	if this.quit {
-		logger.Logger.Warn("transactCoordinater.processTransStart find shutdowning, parent=", parentTnp, " selfparam=", myTnp)
+		logger.Warn("transactCoordinater.processTransStart find shutdowning, parent=", parentTnp, " selfparam=", myTnp)
 		return false
 	}
 	tnode := this.createTransNode(myTnp, ud, timeout)

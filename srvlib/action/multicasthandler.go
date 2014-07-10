@@ -37,7 +37,7 @@ func (this *MulticastPacketFactory) CreateMulticastPacket(data interface{}, sis 
 		if err == nil {
 			pack.Data = byteData
 		} else {
-			logger.Logger.Warn("MulticastPacketFactory.CreateMulticastPacket err:", err)
+			logger.Warn("MulticastPacketFactory.CreateMulticastPacket err:", err)
 		}
 	}
 	proto.SetDefaults(pack)

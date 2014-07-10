@@ -11,14 +11,14 @@ type TxCommSkeleton struct {
 }
 
 func (tcs *TxCommSkeleton) SendTransResult(parent, me *transact.TransNodeParam, tr *transact.TransResult) bool {
-	logger.Logger.Trace("TxCommSkeleton.SendTransResult")
+	logger.Trace("TxCommSkeleton.SendTransResult")
 	p := action.ContructTxResultPacket(parent, me, tr)
 	if p == nil {
 		return false
 	}
 	s := ServerSessionMgrSington.GetSession(parent.AreaID, int(parent.Ot), parent.Oid)
 	if s == nil {
-		logger.Logger.Trace("TxCommSkeleton.SendTransResult s=nil")
+		logger.Trace("TxCommSkeleton.SendTransResult s=nil")
 		return false
 	}
 
@@ -27,14 +27,14 @@ func (tcs *TxCommSkeleton) SendTransResult(parent, me *transact.TransNodeParam, 
 }
 
 func (tcs *TxCommSkeleton) SendTransStart(parent, me *transact.TransNodeParam, ud interface{}) bool {
-	logger.Logger.Trace("TxCommSkeleton.SendTransStart")
+	logger.Trace("TxCommSkeleton.SendTransStart")
 	p := action.ContructTxStartPacket(parent, me, ud)
 	if p == nil {
 		return false
 	}
 	s := ServerSessionMgrSington.GetSession(me.AreaID, int(me.Ot), me.Oid)
 	if s == nil {
-		logger.Logger.Trace("TxCommSkeleton.SendTransStart s=nil")
+		logger.Trace("TxCommSkeleton.SendTransStart s=nil")
 		return false
 	}
 
@@ -43,14 +43,14 @@ func (tcs *TxCommSkeleton) SendTransStart(parent, me *transact.TransNodeParam, u
 }
 
 func (tcs *TxCommSkeleton) SendCmdToTransNode(tnp *transact.TransNodeParam, c transact.TransCmd) bool {
-	logger.Logger.Trace("TxCommSkeleton.SendCmdToTransNode")
+	logger.Trace("TxCommSkeleton.SendCmdToTransNode")
 	p := action.ConstructTxCmdPacket(tnp, c)
 	if p == nil {
 		return false
 	}
 	s := ServerSessionMgrSington.GetSession(tnp.AreaID, int(tnp.Ot), tnp.Oid)
 	if s == nil {
-		logger.Logger.Trace("TxCommSkeleton.SendCmdToTransNode s=nil")
+		logger.Trace("TxCommSkeleton.SendCmdToTransNode s=nil")
 		return false
 	}
 

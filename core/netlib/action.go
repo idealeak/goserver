@@ -27,9 +27,9 @@ func (this *action) do() {
 	if h != nil {
 		err := h.Process(this.s, this.p)
 		if err != nil {
-			logger.Logger.Infof("%v process error %v", this.n, err)
+			logger.Infof("%v process error %v", this.n, err)
 		}
 	} else {
-		logger.Logger.Infof("%v not registe handler", this.n)
+		logger.Infof("%v not registe handler", this.n)
 	}
 }

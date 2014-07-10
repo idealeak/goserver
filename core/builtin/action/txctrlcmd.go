@@ -23,7 +23,7 @@ func (this *TxCtrlCmdPacketFactory) CreatePacket() interface{} {
 }
 
 func (this *TxCtrlCmdHandler) Process(session *netlib.Session, data interface{}) error {
-	logger.Logger.Trace("TxCtrlCmdHandler.Process")
+	logger.Trace("TxCtrlCmdHandler.Process")
 	if txcmd, ok := data.(*protocol.TransactCtrlCmd); ok {
 		if !transact.ProcessTransCmd(transact.TransNodeID(txcmd.GetTId()), transact.TransCmd(txcmd.GetCmd())) {
 			return errors.New("TxCtrlCmdHandler error, tid=" + strconv.FormatInt(txcmd.GetTId(), 10) + " cmd=" + strconv.Itoa(int(txcmd.GetCmd())))

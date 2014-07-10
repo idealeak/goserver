@@ -20,7 +20,7 @@ func (csm *ClientSessionMgr) RegisteSession(s *netlib.Session) bool {
 		sid := NewSessionId(s)
 		s.SetAttribute(SessionAttributeClientSession, sid)
 		csm.sessions[sid.Get()] = s
-		logger.Logger.Tracef("client session %v registe", sid.Get())
+		logger.Tracef("client session %v registe", sid.Get())
 	}
 	return true
 }
@@ -30,7 +30,7 @@ func (csm *ClientSessionMgr) UnregisteSession(s *netlib.Session) bool {
 	if attr != nil {
 		if sid, ok := attr.(SessionId); ok {
 			delete(csm.sessions, sid.Get())
-			logger.Logger.Tracef("client session %v unregiste", sid.Get())
+			logger.Tracef("client session %v unregiste", sid.Get())
 		}
 	}
 	return true

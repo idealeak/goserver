@@ -37,7 +37,7 @@ func (this *BroadcastPacketFactory) CreateBroadcastPacket(sp *protocol.BCSession
 		if err == nil {
 			pack.Data = byteData
 		} else {
-			logger.Logger.Warn("BroadcastPacketFactory.CreateBroadcastPacket err:", err)
+			logger.Warn("BroadcastPacketFactory.CreateBroadcastPacket err:", err)
 		}
 	}
 	proto.SetDefaults(pack)

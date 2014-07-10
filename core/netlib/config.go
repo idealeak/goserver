@@ -65,7 +65,7 @@ func (c *Configuration) Name() string {
 
 func (c *Configuration) Init() error {
 	for _, str := range c.SrvInfo.Banner {
-		logger.Logger.Info(str)
+		logger.Info(str)
 	}
 
 	for i := 0; i < len(c.IoServices); i++ {

@@ -24,7 +24,7 @@ func (this *PacketRedirectPacketFactory) CreatePacket() interface{} {
 }
 
 func (this *PacketRedirectHandler) Process(s *netlib.Session, data interface{}) error {
-	logger.Logger.Trace("PacketRedirectHandler.Process")
+	logger.Trace("PacketRedirectHandler.Process")
 	if pr, ok := data.(*protocol.SSPacketRedirect); ok {
 		packid, pack, err := netlib.UnmarshalPacket(pr.GetData())
 		if err != nil {

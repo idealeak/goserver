@@ -25,7 +25,7 @@ func RegistePackage(p Package) {
 func LoadPackages(configFile string) {
 	data, err := ioutil.ReadFile(configFile)
 	if err != nil {
-		logger.Logger.Errorf("Error while reading config file %s: %s", configFile, err)
+		logger.Errorf("Error while reading config file %s: %s", configFile, err)
 	}
 
 	switch path.Ext(configFile) {
@@ -34,7 +34,7 @@ func LoadPackages(configFile string) {
 		var buf bytes.Buffer
 		err = json.Compact(&buf, data)
 		if err != nil {
-			logger.Logger.Errorf("Error in JSON config file %s: %s", configFile, err)
+			logger.Errorf("Error in JSON config file %s: %s", configFile, err)
 		}
 		data = buf.Bytes()
 
@@ -62,14 +62,14 @@ func LoadPackages(configFile string) {
 
 				err = json.Unmarshal(data[begin:end], pkg)
 				if err != nil {
-					logger.Logger.Errorf("Error while unmarshalling JSON from config file %s: %s", configFile, err)
+					logger.Errorf("Error while unmarshalling JSON from config file %s: %s", configFile, err)
 				}
 			}
 			err := pkg.Init()
 			if err != nil {
-				logger.Logger.Errorf("Error while initializing package %s: %s", pkg.Name(), err)
+				logger.Errorf("Error while initializing package %s: %s", pkg.Name(), err)
 			} else {
-				logger.Logger.Info("module [", pkg.Name(), "] load success")
+				logger.Info("module [", pkg.Name(), "] load success")
 			}
 		}
 
@@ -82,7 +82,7 @@ func ClosePackages() {
 	for _, pkg := range packages {
 		err := pkg.Close()
 		if err != nil {
-			logger.Logger.Errorf("Error while closing package %s: %s", pkg.Name(), err)
+			logger.Errorf("Error while closing package %s: %s", pkg.Name(), err)
 		}
 	}
 }

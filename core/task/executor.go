@@ -32,8 +32,8 @@ func NewExecutor() *Executor {
 }
 
 func (e *Executor) Start() {
-	logger.Logger.Trace("Executor Start")
-	defer logger.Logger.Trace("Executor Start [ok]")
+	logger.Trace("Executor Start")
+	defer logger.Trace("Executor Start [ok]")
 
 	e.Object = basic.NewObject(core.ObjId_ExecutorId,
 		"executor",

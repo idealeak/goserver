@@ -88,7 +88,7 @@ func (s *Session) sendRoutine() {
 
 	defer func() {
 		if err := recover(); err != nil {
-			logger.Logger.Trace(s.Id, " ->close: Session.procSend err: ", err)
+			logger.Trace(s.Id, " ->close: Session.procSend err: ", err)
 		}
 		s.sc.encoder.FinishEncode(s)
 		s.shutWrite()
@@ -132,7 +132,7 @@ func (s *Session) recvRoutine() {
 
 	defer func() {
 		if err := recover(); err != nil {
-			logger.Logger.Trace(s.Id, " ->close: Session.procRecv err: ", err)
+			logger.Trace(s.Id, " ->close: Session.procRecv err: ", err)
 		}
 		s.sc.decoder.FinishDecode(s)
 		s.shutRead()
@@ -214,7 +214,7 @@ func (s *Session) Send(msg interface{}, asyn ...bool) bool {
 		select {
 		case s.sendBuffer <- msg:
 		default:
-			logger.Logger.Warn(s.Id, " send buffer full,data be droped")
+			logger.Warn(s.Id, " send buffer full,data be droped")
 			s.Close()
 			return false
 		}
@@ -222,7 +222,7 @@ func (s *Session) Send(msg interface{}, asyn ...bool) bool {
 		select {
 		case s.sendBuffer <- msg:
 		case <-time.After(time.Second * time.Duration(s.sc.WriteTimeout)):
-			logger.Logger.Warn(s.Id, " send buffer full,data be droped")
+			logger.Warn(s.Id, " send buffer full,data be droped")
 			s.Close()
 			return false
 		}

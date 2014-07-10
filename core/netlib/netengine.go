@@ -100,7 +100,7 @@ func (e *NetEngine) Init() {
 			e.pool[Config.IoServices[i].Id] = s
 			err = s.start()
 			if err != nil {
-				logger.Logger.Error(err)
+				logger.Error(err)
 			}
 		}
 	}

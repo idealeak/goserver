@@ -24,27 +24,27 @@ func (sft *SessionFilterTrace) GetInterestOps() uint {
 }
 
 func (sft *SessionFilterTrace) OnSessionOpened(s *netlib.Session, bAccept bool) bool {
-	logger.Logger.Tracef("SessionFilterTrace.OnSessionOpened sid=%v accept=%v ", s.Id, bAccept)
+	logger.Tracef("SessionFilterTrace.OnSessionOpened sid=%v accept=%v ", s.Id, bAccept)
 	return true
 }
 
 func (sft *SessionFilterTrace) OnSessionClosed(s *netlib.Session) bool {
-	logger.Logger.Tracef("SessionFilterTrace.OnSessionClosed sid=%v", s.Id)
+	logger.Tracef("SessionFilterTrace.OnSessionClosed sid=%v", s.Id)
 	return true
 }
 
 func (sft *SessionFilterTrace) OnSessionIdle(s *netlib.Session) bool {
-	logger.Logger.Tracef("SessionFilterTrace.OnSessionIdle sid=%v", s.Id)
+	logger.Tracef("SessionFilterTrace.OnSessionIdle sid=%v", s.Id)
 	return true
 }
 
 func (sft *SessionFilterTrace) OnPacketReceived(s *netlib.Session, packetid int, packet interface{}) bool {
-	logger.Logger.Tracef("SessionFilterTrace.OnPacketReceived sid=%v packetid=%v packet=%v", s.Id, packetid, reflect.TypeOf(packet))
+	logger.Tracef("SessionFilterTrace.OnPacketReceived sid=%v packetid=%v packet=%v", s.Id, packetid, reflect.TypeOf(packet))
 	return true
 }
 
 func (sft *SessionFilterTrace) OnPacketSent(s *netlib.Session, data []byte) bool {
-	logger.Logger.Tracef("SessionFilterTrace.OnPacketSent sid=%v size=%d", s.Id, len(data))
+	logger.Tracef("SessionFilterTrace.OnPacketSent sid=%v size=%d", s.Id, len(data))
 	return true
 }
 

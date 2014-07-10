@@ -130,11 +130,11 @@ func (admin *AdminApp) Start(AdminHttpAddr string, AdminHttpPort int) {
 	addr := fmt.Sprintf("%s:%d", AdminHttpAddr, AdminHttpPort)
 	l, err := net.Listen("tcp", addr)
 	if err != nil {
-		logger.Logger.Critical("Admin Listen: ", err)
+		logger.Critical("Admin Listen: ", err)
 	}
 	ipAndPort := strings.Split(l.Addr().String(), ":")
 	if len(ipAndPort) != 2 {
-		logger.Logger.Critical("Admin Listen Addr error")
+		logger.Critical("Admin Listen Addr error")
 		return
 	}
 	if len(AdminHttpAddr) == 0 || AdminHttpAddr == "0" {
@@ -144,13 +144,13 @@ func (admin *AdminApp) Start(AdminHttpAddr string, AdminHttpPort int) {
 	}
 
 	AdminHttpPort, _ = strconv.Atoi(ipAndPort[1])
-	logger.Logger.Infof("Admin Serve: %s", l.Addr())
+	logger.Infof("Admin Serve: %s", l.Addr())
 
 	go func() {
 		server := &http.Server{}
 		err = server.Serve(l)
 		if err != nil {
-			logger.Logger.Critical("Admin Serve: ", err)
+			logger.Critical("Admin Serve: ", err)
 		}
 	}()
 }
