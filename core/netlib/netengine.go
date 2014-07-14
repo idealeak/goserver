@@ -20,7 +20,6 @@ var (
 type NetEngine struct {
 	pool     map[int]ioService
 	childAck chan int
-	ownerAck chan<- interface{}
 	quit     bool
 	reaped   bool
 }
@@ -119,12 +118,11 @@ func (e *NetEngine) Update() {
 	}
 }
 
-func (e *NetEngine) Shutdown(ownerAck chan<- interface{}) {
+func (e *NetEngine) Shutdown() {
 	if e.quit {
 		return
 	}
 
-	e.ownerAck = ownerAck
 	e.quit = true
 
 	if len(e.pool) > 0 {
@@ -172,7 +170,7 @@ func (e *NetEngine) reapRoutine() {
 }
 
 func (e *NetEngine) destroy() {
-	e.ownerAck <- e.ModuleName()
+	module.UnregisteModule(e)
 }
 
 func init() {

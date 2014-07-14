@@ -253,7 +253,7 @@ func (this *ModuleEntity) safeUpt(nowTime time.Time) {
 
 func (this *ModuleEntity) safeShutdown(shutWaitAck chan<- interface{}) {
 	defer utils.DumpStackIfPanic("ModuleEntity.safeShutdown")
-	this.module.Shutdown(shutWaitAck)
+	this.module.Shutdown()
 }
 
 func (this *ModuleMgr) OnStart() {}
@@ -268,6 +268,10 @@ func RegistePreloadModule(m PreloadModule, priority int) {
 
 func RegisteModule(m Module, tickInterval time.Duration, priority int) {
 	AppModule.RegisteModule(m, tickInterval, priority)
+}
+
+func UnregisteModule(m Module) {
+	AppModule.waitShutAct <- m.ModuleName()
 }
 
 func Start() *utils.Waitor {

@@ -21,7 +21,6 @@ type transactCoordinater struct {
 	idGen     utils.AtomicIdGen
 	lock      sync.Mutex
 	transPool map[TransNodeID]*TransNode
-	ownerAck  chan<- interface{}
 	quit      bool
 	reaped    bool
 }
@@ -36,13 +35,12 @@ func (this *transactCoordinater) Init() {
 func (this *transactCoordinater) Update() {
 }
 
-func (this *transactCoordinater) Shutdown(ownerAck chan<- interface{}) {
+func (this *transactCoordinater) Shutdown() {
 	if this.quit {
 		return
 	}
 
 	this.quit = true
-	this.ownerAck = ownerAck
 
 	if len(this.transPool) > 0 {
 		go this.reapRoutine()
@@ -67,7 +65,7 @@ func (this *transactCoordinater) reapRoutine() {
 }
 
 func (this *transactCoordinater) destroy() {
-	this.ownerAck <- this.ModuleName()
+	module.UnregisteModule(this)
 }
 
 func (this *transactCoordinater) releaseTrans(tnode *TransNode) {

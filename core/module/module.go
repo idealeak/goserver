@@ -9,5 +9,5 @@ type Module interface {
 	ModuleName() string
 	Init()
 	Update()
-	Shutdown(chan<- interface{})
+	Shutdown()
 }
