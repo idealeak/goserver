@@ -1,4 +1,4 @@
-package worldsrv
+package main
 
 // Game world server(The whole world only).
 // Responsibilities:

@@ -1,0 +1,7 @@
+package protocol;
+
+enum MmoPacketID {	
+	PACKET_SS_SERVICE_REGISTE	= -3000;
+	PACKET_SS_SERVICE_INFO		= -3001;
+	PACKET_SS_SERVICE_SHUT		= -3002;
+}

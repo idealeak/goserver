@@ -1,0 +1,103 @@
+{
+    "netlib": {
+		"SrvInfo":{
+			"Name": "BalanceServer",
+			"Type":	2,
+			"Id": 201,
+			"AreaID": 1,
+			"Banner": [
+					"=================",
+					"balance server",
+					"================="
+				]
+		},
+	
+		"IoServices": [
+			{
+				"Id": 201,
+				"Type": 2,
+				"AreaId": 1,
+				"Name": "BalanceService",
+				"Ip": "127.0.0.1",
+				"Port": 2001,
+				"MaxDone": 20,
+				"MaxPend": 20,
+				"MaxPacket": 65535,
+				"MaxConn": 10000,
+				"RcvBuff": 8192,
+				"SndBuff": 8192,
+				"WriteTimeout": 30,
+				"ReadTimeout": 30,
+				"IsInnerLink": true,
+				"NoDelay": true,
+				"SupportFragment": true,
+				"AuthKey": "1234567890",
+				"FilterChain": ["session-filter-auth","session-filter-keepalive"],
+				"HandlerChain": ["session-srv-registe"]
+			},
+			{
+				"Id": 501,
+				"Type": 5,
+				"AreaId": 1,
+				"Name": "ManagerService",
+				"Ip": "127.0.0.1",
+				"Port": 5555,
+				"MaxDone": 20,
+				"MaxPend": 20,
+				"MaxPacket": 65535,
+				"MaxConn": 10000,
+				"RcvBuff": 8192,
+				"SndBuff": 8192,
+				"WriteTimeout": 30,
+				"ReadTimeout": 30,
+				"IsInnerLink": true,
+				"NoDelay": true,
+				"IsClient": true,
+				"SupportFragment": true,
+				"AuthKey": "1234567890",
+				"FilterChain": ["session-filter-auth","session-filter-keepalive"],
+				"HandlerChain": ["session-srv-registe","srv-service-handler"]
+			}
+		]
+    },
+
+	"module": {
+		"Options": {
+			"QueueBacklog": 1024,
+			"MaxDone": 1024,
+			"Interval": 100000000
+		}
+	},
+
+	"executor": {
+		"Options": {
+			"QueueBacklog": 1024,
+			"MaxDone": 1024,
+			"Interval": 0
+			},
+		"Worker": {
+			"WorkerCnt": 8,
+			"Options": {
+				"QueueBacklog": 1024,
+				"MaxDone": 1024,
+				"Interval": 0
+			}
+		}
+	},
+	
+	"timer": {
+		"Options": {
+			"QueueBacklog": 1024,
+			"MaxDone": 1024,
+			"Interval": 100000000
+		}
+	},
+						
+    "core": {
+	    "MaxProcs": 4
+    },
+	
+	"cmdline": {
+		"SupportCmdLine": true
+	}
+}

@@ -1,4 +1,4 @@
-package gatesrv
+package main
 
 //
 // Responsibilities:

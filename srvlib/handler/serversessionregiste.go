@@ -23,7 +23,7 @@ func (sfl *SessionHandlerSrvRegiste) GetInterestOps() uint {
 	return 1<<netlib.InterestOps_Opened | 1<<netlib.InterestOps_Closed
 }
 
-func (sfl *SessionHandlerSrvRegiste) OnSessionOpened(s *netlib.Session, bAccept bool) {
+func (sfl *SessionHandlerSrvRegiste) OnSessionOpened(s *netlib.Session) {
 	registePacket := &protocol.SSSrvRegiste{
 		Id:     proto.Int(netlib.Config.SrvInfo.Id),
 		Type:   proto.Int(netlib.Config.SrvInfo.Type),

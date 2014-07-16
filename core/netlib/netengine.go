@@ -184,3 +184,11 @@ func Connect(o *basic.Object, sc *SessionConfig) error {
 func Listen(o *basic.Object, sc *SessionConfig) error {
 	return NetModule.Listen(o, sc)
 }
+
+func GetAcceptors() []*Acceptor {
+	return NetModule.GetAcceptors()
+}
+
+func ShutConnector(ip string, port int) {
+	NetModule.ShutConnector(ip, port)
+}

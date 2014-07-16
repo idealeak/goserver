@@ -166,7 +166,7 @@ func (a *Acceptor) reapRoutine() {
 
 func (a *Acceptor) procAccepted(s *Session) {
 	a.mapSessions[s.Id] = s
-	s.FireConnectEvent(true)
+	s.FireConnectEvent()
 	s.start()
 }
 
@@ -204,4 +204,15 @@ func (a *Acceptor) procChanEvent() {
 			return
 		}
 	}
+}
+
+func (a *Acceptor) GetSessionConfig() *SessionConfig {
+	return a.sc
+}
+
+func (a *Acceptor) Addr() net.Addr {
+	if a.listener != nil {
+		return a.listener.Addr()
+	}
+	return nil
 }

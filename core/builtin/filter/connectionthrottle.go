@@ -26,7 +26,7 @@ func (ctf *ConnectionThrottleFilter) GetInterestOps() uint {
 	return 1 << netlib.InterestOps_Opened
 }
 
-func (ctf *ConnectionThrottleFilter) OnSessionOpened(s *netlib.Session, bAccept bool) bool {
+func (ctf *ConnectionThrottleFilter) OnSessionOpened(s *netlib.Session) bool {
 	if !ctf.isConnectionOk(s) {
 		s.Close()
 		return false

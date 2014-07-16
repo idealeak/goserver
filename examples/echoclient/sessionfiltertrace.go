@@ -20,7 +20,7 @@ func (sft *SessionFilterTrace) GetInterestOps() uint {
 	return 0
 }
 
-func (sft *SessionFilterTrace) OnSessionOpened(s *netlib.Session, bAccept bool) bool {
+func (sft *SessionFilterTrace) OnSessionOpened(s *netlib.Session) bool {
 	return true
 }
 

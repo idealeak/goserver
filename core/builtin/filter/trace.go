@@ -23,8 +23,8 @@ func (sft *SessionFilterTrace) GetInterestOps() uint {
 	return 1<<netlib.InterestOps_Max - 1
 }
 
-func (sft *SessionFilterTrace) OnSessionOpened(s *netlib.Session, bAccept bool) bool {
-	logger.Tracef("SessionFilterTrace.OnSessionOpened sid=%v accept=%v ", s.Id, bAccept)
+func (sft *SessionFilterTrace) OnSessionOpened(s *netlib.Session) bool {
+	logger.Tracef("SessionFilterTrace.OnSessionOpened sid=%v", s.Id)
 	return true
 }
 

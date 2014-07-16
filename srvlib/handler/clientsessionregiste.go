@@ -21,7 +21,7 @@ func (sfl *SessionHandlerClientRegiste) GetInterestOps() uint {
 	return 1<<netlib.InterestOps_Opened | 1<<netlib.InterestOps_Closed
 }
 
-func (sfl *SessionHandlerClientRegiste) OnSessionOpened(s *netlib.Session, bAccept bool) {
+func (sfl *SessionHandlerClientRegiste) OnSessionOpened(s *netlib.Session) {
 	srvlib.ClientSessionMgrSington.RegisteSession(s)
 }
 

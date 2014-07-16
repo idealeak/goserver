@@ -1,0 +1,50 @@
+package protocol;
+
+import "protocol/packetid.proto";
+
+message ServiceInfo {
+	required int32 AreaId = 1;
+	required int32 SrvId = 2;
+	required int32 SrvType = 3;
+	required int32 SrvPID = 4;
+	required string SrvName = 5;
+	required string NetworkType = 6;
+	required string Ip = 7;
+	required int32 Port = 8;
+	optional int32 WriteTimeOut = 9;
+	optional int32 ReadTimeOut = 10;
+	optional int32 IdleTimeOut = 11;
+	optional int32 MaxDone = 12;
+	optional int32 MaxPend = 13;
+	optional int32 MaxPacket = 14;
+	optional int32 RcvBuff = 15;
+	optional int32 SndBuff = 16;
+	optional int32 SoLinger = 17;
+	optional bool IsAuth = 18;
+	optional bool KeepAlive = 19;
+	optional bool NoDelay = 20;
+	optional bool IsAutoReconn = 21;
+	optional bool IsInnerLink = 22;
+	optional bool SupportFragment = 23;
+	optional bool AllowMultiConn = 24;
+	optional string AuthKey = 25;
+	optional string EncoderName = 26;
+	optional string DecoderName = 27;
+	repeated string FilterChain = 28;
+	repeated string HandlerChain = 29;
+}
+
+message SSServiceRegiste {
+	required MmoPacketID PacketId = 1 [default=PACKET_SS_SERVICE_REGISTE];
+	repeated ServiceInfo Services = 2;
+}
+
+message SSServiceInfo {
+	required MmoPacketID PacketId = 1 [default=PACKET_SS_SERVICE_INFO];
+	required ServiceInfo Service = 2;
+}
+
+message SSServiceShut {
+	required MmoPacketID PacketId = 1 [default=PACKET_SS_SERVICE_SHUT];
+	required ServiceInfo Service = 2;
+}

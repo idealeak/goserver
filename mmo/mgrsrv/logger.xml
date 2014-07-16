@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+	<seelog type="adaptive" mininterval="2000000" maxinterval="100000000" critmsgcount="500" minlevel="trace">
+        <exceptions>
+            <exception filepattern="test*" minlevel="error"/>
+        </exceptions>
+        <outputs formatid="all">
+            <file path="all.log"/>
+            <filter levels="info,trace">
+              <console formatid="fmtinfo"/>
+            </filter>
+            <filter levels="error,critical" formatid="fmterror">
+              <console/>
+              <file path="errors.log"/>
+            </filter>
+        </outputs>
+        <formats>
+            <format id="fmtinfo" format="[%Date][%Time] [%Level] %Msg%n"/>
+            <format id="fmterror" format="[%Date][%Time] [%LEVEL] [%FuncShort @ %File.%Line] %Msg%n"/>
+            <format id="all" format="[%Date][%Time] [%Level] [@ %File.%Line] %Msg%n"/>
+            <format id="criticalemail" format="Critical error on our server!\n    %Time %Date %RelFile %Func %Msg \nSent by Seelog"/>
+        </formats>
+    </seelog>

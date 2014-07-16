@@ -1,4 +1,4 @@
-package gamesrv
+package main
 
 // Game logic server.
 // Responsibilities:

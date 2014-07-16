@@ -22,7 +22,7 @@ type SessionFilterCreator func() SessionFilter
 type SessionFilter interface {
 	GetName() string
 	GetInterestOps() uint
-	OnSessionOpened(s *Session, bAccept bool) bool                      //run in main goroutine
+	OnSessionOpened(s *Session) bool                                    //run in main goroutine
 	OnSessionClosed(s *Session) bool                                    //run in main goroutine
 	OnSessionIdle(s *Session) bool                                      //run in main goroutine
 	OnPacketReceived(s *Session, packetid int, packet interface{}) bool //run in session receive goroutine
@@ -74,11 +74,11 @@ func (sfc *SessionFilterChain) GetFilter(name string) SessionFilter {
 	return nil
 }
 
-func (sfc *SessionFilterChain) OnSessionOpened(s *Session, bAccept bool) bool {
+func (sfc *SessionFilterChain) OnSessionOpened(s *Session) bool {
 	for e := sfc.filtersInterestOps[InterestOps_Opened].Front(); e != nil; e = e.Next() {
 		sf := e.Value.(SessionFilter)
 		if sf != nil {
-			if !sf.OnSessionOpened(s, bAccept) {
+			if !sf.OnSessionOpened(s) {
 				return false
 			}
 		}

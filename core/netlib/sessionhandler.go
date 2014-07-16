@@ -13,7 +13,7 @@ type SessionHandlerCreator func() SessionHandler
 type SessionHandler interface {
 	GetName() string
 	GetInterestOps() uint
-	OnSessionOpened(s *Session, bAccept bool)                      //run in main goroutine
+	OnSessionOpened(s *Session)                                    //run in main goroutine
 	OnSessionClosed(s *Session)                                    //run in main goroutine
 	OnSessionIdle(s *Session)                                      //run in main goroutine
 	OnPacketReceived(s *Session, packetid int, packet interface{}) //run in session receive goroutine
@@ -65,11 +65,11 @@ func (shc *SessionHandlerChain) GetHandler(name string) SessionHandler {
 	return nil
 }
 
-func (shc *SessionHandlerChain) OnSessionOpened(s *Session, bAccept bool) {
+func (shc *SessionHandlerChain) OnSessionOpened(s *Session) {
 	for e := shc.handlersInterestOps[InterestOps_Opened].Front(); e != nil; e = e.Next() {
 		sh := e.Value.(SessionHandler)
 		if sh != nil {
-			sh.OnSessionOpened(s, bAccept)
+			sh.OnSessionOpened(s)
 		}
 	}
 }

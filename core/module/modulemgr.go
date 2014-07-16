@@ -192,11 +192,11 @@ func (this *ModuleMgr) checkShutdown() bool {
 		logger.Trace(param, " shutdowned")
 		if name, ok := param.(string); ok {
 			me := this.getModuleEntityByName(name)
-			if me != nil {
+			if me != nil && !me.quited {
 				me.quited = true
+				this.waitShutCnt--
 			}
 		}
-		this.waitShutCnt--
 	default:
 	}
 	if this.waitShutCnt == 0 {

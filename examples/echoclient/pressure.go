@@ -76,8 +76,8 @@ func (this *PressureTest) Update() {
 	return
 }
 
-func (this *PressureTest) Shutdown(ownerAck chan<- interface{}) {
-	ownerAck <- this.ModuleName()
+func (this *PressureTest) Shutdown() {
+	module.UnregisteModule(this)
 }
 
 func init() {

@@ -25,7 +25,7 @@ func (blf *BlackListFilter) GetInterestOps() uint {
 	return 1<<netlib.InterestOps_Opened | 1<<netlib.InterestOps_Received | 1<<netlib.InterestOps_Sent
 }
 
-func (blf *BlackListFilter) OnSessionOpened(s *netlib.Session, bAccept bool) bool {
+func (blf *BlackListFilter) OnSessionOpened(s *netlib.Session) bool {
 	if blf.isBlock(s) {
 		blf.blockSession(s)
 		return false

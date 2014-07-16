@@ -1,4 +1,4 @@
-package accountsrv
+package main
 
 // Account server.
 // Responsibilities:

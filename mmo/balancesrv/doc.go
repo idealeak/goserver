@@ -1,4 +1,4 @@
-package balancesrv
+package main
 
 // Load balancing server in traditional sense.
 // Responsibilities:

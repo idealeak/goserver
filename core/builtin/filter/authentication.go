@@ -29,7 +29,7 @@ func (af *AuthenticationFilter) GetInterestOps() uint {
 	return 1<<netlib.InterestOps_Opened | 1<<netlib.InterestOps_Received
 }
 
-func (af *AuthenticationFilter) OnSessionOpened(s *netlib.Session, bAccept bool) bool {
+func (af *AuthenticationFilter) OnSessionOpened(s *netlib.Session) bool {
 	timestamp := time.Now().Unix()
 	h := md5.New()
 	sc := s.GetSessionConfig()

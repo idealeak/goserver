@@ -263,15 +263,15 @@ func (s *Session) canShutdown() bool {
 	return s.shutRecv && s.shutSend
 }
 
-func (s *Session) FireConnectEvent(bAccept bool) bool {
+func (s *Session) FireConnectEvent() bool {
 	s.IsConned = true
 	if s.sc.sfc != nil {
-		if !s.sc.sfc.OnSessionOpened(s, bAccept) {
+		if !s.sc.sfc.OnSessionOpened(s) {
 			return false
 		}
 	}
 	if s.sc.shc != nil {
-		s.sc.shc.OnSessionOpened(s, bAccept)
+		s.sc.shc.OnSessionOpened(s)
 	}
 	return true
 }

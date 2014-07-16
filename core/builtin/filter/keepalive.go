@@ -21,7 +21,7 @@ func (kf *KeepAliveFilter) GetInterestOps() uint {
 	return 1 << netlib.InterestOps_Idle
 }
 
-func (kf *KeepAliveFilter) OnSessionOpened(s *netlib.Session, bAccept bool) bool {
+func (kf *KeepAliveFilter) OnSessionOpened(s *netlib.Session) bool {
 	return true
 }
 

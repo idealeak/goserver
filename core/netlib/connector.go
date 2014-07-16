@@ -139,7 +139,7 @@ func (c *Connector) procConnected(conn net.Conn) {
 	}
 
 	c.s = newSession(c.idGen.NextId(), conn, c.sc, c)
-	c.s.FireConnectEvent(false)
+	c.s.FireConnectEvent()
 	c.s.start()
 }
 
