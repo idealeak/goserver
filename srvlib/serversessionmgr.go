@@ -30,8 +30,8 @@ func (ssm *ServerSessionMgr) SetListener(l ServerSessionRegisteListener) ServerS
 func (ssm *ServerSessionMgr) RegisteSession(s *netlib.Session) bool {
 	attr := s.GetAttribute(SessionAttributeServerInfo)
 	if attr != nil {
-		logger.Trace("ServerSessionMgr.RegisteSession")
 		if srvInfo, ok := attr.(*protocol.SSSrvRegiste); ok && srvInfo != nil {
+			logger.Tracef("ServerSessionMgr.RegisteSession %v", srvInfo)
 			areaId := int(srvInfo.GetAreaId())
 			srvType := int(srvInfo.GetType())
 			srvId := int(srvInfo.GetId())
@@ -57,8 +57,8 @@ func (ssm *ServerSessionMgr) RegisteSession(s *netlib.Session) bool {
 func (ssm *ServerSessionMgr) UnregisteSession(s *netlib.Session) bool {
 	attr := s.GetAttribute(SessionAttributeServerInfo)
 	if attr != nil {
-		logger.Trace("ServerSessionMgr.UnregisteSession")
 		if srvInfo, ok := attr.(*protocol.SSSrvRegiste); ok && srvInfo != nil {
+			logger.Tracef("ServerSessionMgr.UnregisteSession %v", srvInfo)
 			areaId := int(srvInfo.GetAreaId())
 			srvType := int(srvInfo.GetType())
 			srvId := int(srvInfo.GetId())

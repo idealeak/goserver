@@ -58,7 +58,7 @@ func UnmarshalPacket(data []byte) (int, interface{}, error) {
 
 	pck := CreatePacket(int(ph.PacketId))
 	if pck == nil {
-		return int(ph.PacketId), nil, nil
+		return int(ph.PacketId), nil, NewUnparsePacketTypeErr(ph.EncodeType, ph.PacketId)
 	} else {
 		err = encodingArray[ph.EncodeType].Unmarshal(data[LenOfProtoHeader:], pck)
 		return int(ph.PacketId), pck, err

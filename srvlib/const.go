@@ -1,4 +1,4 @@
-package mmo
+package srvlib
 
 const (
 	UnknowServiceType  int = 0

@@ -14,6 +14,28 @@
 	
 		"IoServices": [
 			{
+				"Id": 102,
+				"Type": 1,
+				"AreaId": 1,
+				"Name": "ClientService",
+				"Ip": "127.0.0.1",
+				"Port": 11002,
+				"MaxDone": 20,
+				"MaxPend": 20,
+				"MaxPacket": 65535,
+				"MaxConn": 10000,
+				"RcvBuff": 8192,
+				"SndBuff": 8192,
+				"WriteTimeout": 30,
+				"ReadTimeout": 30,
+				"IsInnerLink": false,
+				"NoDelay": true,
+				"SupportFragment": true,
+				"AuthKey": "1234567890",
+				"FilterChain": ["session-filter-trace","session-filter-auth","session-filter-keepalive"],
+				"HandlerChain": ["session-client-registe","handler-client-load"]
+			},
+			{
 				"Id": 401,
 				"Type": 4,
 				"AreaId": 1,

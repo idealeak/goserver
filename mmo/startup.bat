@@ -1,0 +1,12 @@
+cd accountsrv
+start accountsrv
+cd ../balancesrv
+start balancesrv
+cd ../gamesrv
+start gamesrv
+cd ../gatesrv
+start gatesrv
+cd ../mgrsrv
+start mgrsrv
+cd ../worldsrv
+start worldsrv

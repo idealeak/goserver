@@ -1,0 +1,82 @@
+{
+    "netlib": {
+		"SrvInfo":{
+			"Name": "Client",
+			"Type":	1,
+			"Id": 1,
+			"AreaID": 1,
+			"Banner": [
+					"=================",
+					"client",
+					"================="
+				]
+		},
+	
+		"IoServices": [
+			{
+				"Id": 101,
+				"Type": 1,
+				"AreaId": 1,
+				"Name": "ClientService",
+				"Ip": "127.0.0.1",
+				"Port": 11001,
+				"MaxDone": 20,
+				"MaxPend": 20,
+				"MaxPacket": 1024,
+				"MaxConn": 1,
+				"RcvBuff": 1024,
+				"SndBuff": 1024,
+				"WriteTimeout": 30,
+				"ReadTimeout": 30,
+				"SoLinger": 10,
+				"IsInnerLink": false,
+				"IsClient": true,
+				"NoDelay": true,
+				"SupportFragment": true,
+				"AuthKey": "1234567890",
+				"FilterChain": ["session-filter-trace","session-filter-auth"],
+				"HandlerChain": []
+			}
+		]
+    },
+
+	"module": {
+		"Options": {
+			"QueueBacklog": 1024,
+			"MaxDone": 1024,
+			"Interval": 100000000
+		}
+	},
+
+	"executor": {
+		"Options": {
+			"QueueBacklog": 1024,
+			"MaxDone": 1024,
+			"Interval": 0
+			},
+		"Worker": {
+			"WorkerCnt": 8,
+			"Options": {
+				"QueueBacklog": 1024,
+				"MaxDone": 1024,
+				"Interval": 0
+			}
+		}
+	},
+	
+	"timer": {
+		"Options": {
+			"QueueBacklog": 1024,
+			"MaxDone": 1024,
+			"Interval": 100000000
+		}
+	},
+						
+    "core": {
+	    "MaxProcs": 4
+    },
+	
+	"cmdline": {
+		"SupportCmdLine": true
+	}
+}

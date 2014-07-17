@@ -14,6 +14,29 @@
 	
 		"IoServices": [
 			{
+				"Id": 101,
+				"Type": 1,
+				"AreaId": 1,
+				"Name": "ClientService",
+				"Ip": "",
+				"Port": 11001,
+				"MaxDone": 20,
+				"MaxPend": 20,
+				"MaxPacket": 1024,
+				"MaxConn": 10000,
+				"RcvBuff": 1024,
+				"SndBuff": 1024,
+				"WriteTimeout": 10,
+				"ReadTimeout": 10,
+				"SoLinger": 10,
+				"IsInnerLink": false,
+				"NoDelay": true,
+				"SupportFragment": true,
+				"AuthKey": "1234567890",
+				"FilterChain": ["session-filter-trace","session-filter-auth"],
+				"HandlerChain": ["handler-client-balance"]
+			},		
+			{
 				"Id": 201,
 				"Type": 2,
 				"AreaId": 1,
@@ -33,7 +56,7 @@
 				"SupportFragment": true,
 				"AuthKey": "1234567890",
 				"FilterChain": ["session-filter-auth","session-filter-keepalive"],
-				"HandlerChain": ["session-srv-registe"]
+				"HandlerChain": ["session-srv-registe","srv-service-handler"]
 			},
 			{
 				"Id": 501,

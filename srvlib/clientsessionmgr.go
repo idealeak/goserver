@@ -48,3 +48,7 @@ func (csm *ClientSessionMgr) Broadcast(pack interface{}) {
 		s.Send(pack)
 	}
 }
+
+func (csm *ClientSessionMgr) Count() int {
+	return len(csm.sessions)
+}

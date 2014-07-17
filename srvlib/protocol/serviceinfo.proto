@@ -35,16 +35,16 @@ message ServiceInfo {
 }
 
 message SSServiceRegiste {
-	required MmoPacketID PacketId = 1 [default=PACKET_SS_SERVICE_REGISTE];
+	required SrvlibPacketID PacketId = 1 [default=PACKET_SS_SERVICE_REGISTE];
 	repeated ServiceInfo Services = 2;
 }
 
 message SSServiceInfo {
-	required MmoPacketID PacketId = 1 [default=PACKET_SS_SERVICE_INFO];
+	required SrvlibPacketID PacketId = 1 [default=PACKET_SS_SERVICE_INFO];
 	required ServiceInfo Service = 2;
 }
 
 message SSServiceShut {
-	required MmoPacketID PacketId = 1 [default=PACKET_SS_SERVICE_SHUT];
+	required SrvlibPacketID PacketId = 1 [default=PACKET_SS_SERVICE_SHUT];
 	required ServiceInfo Service = 2;
 }

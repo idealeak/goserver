@@ -1,4 +1,4 @@
-package mmo
+package srvlib
 
 var (
 	sessionServiceERtable = make(map[int32][]int32)

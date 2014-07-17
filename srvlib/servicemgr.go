@@ -1,4 +1,4 @@
-package mmo
+package srvlib
 
 import (
 	"os"
@@ -10,60 +10,20 @@ import (
 	"github.com/idealeak/goserver/core"
 	"github.com/idealeak/goserver/core/logger"
 	"github.com/idealeak/goserver/core/netlib"
-	mmoproto "github.com/idealeak/goserver/mmo/protocol"
-	"github.com/idealeak/goserver/srvlib"
-	libproto "github.com/idealeak/goserver/srvlib/protocol"
+	"github.com/idealeak/goserver/srvlib/protocol"
 )
 
-// 依赖于 github.com/idealeak/goserver/srvlib/handler/serversessionregiste
-// 需要挂接在serversessionregiste之后
 var (
-	ServiceHandlerName          = "srv-service-handler"
 	SessionAttributeServiceInfo = &serviceMgr{}
 	SessionAttributeServiceFlag = &serviceMgr{}
-	ServiceMgr                  = &serviceMgr{servicesPool: make(map[int32]map[int32]*mmoproto.ServiceInfo)}
+	ServiceMgr                  = &serviceMgr{servicesPool: make(map[int32]map[int32]*protocol.ServiceInfo)}
 )
 
 type serviceMgr struct {
-	servicesPool map[int32]map[int32]*mmoproto.ServiceInfo
+	servicesPool map[int32]map[int32]*protocol.ServiceInfo
 }
 
-func (this serviceMgr) GetName() string {
-	return ServiceHandlerName
-}
-
-func (this *serviceMgr) GetInterestOps() uint {
-	return 1<<netlib.InterestOps_Opened | 1<<netlib.InterestOps_Closed
-}
-
-func (this *serviceMgr) OnSessionOpened(s *netlib.Session) {
-	sc := s.GetSessionConfig()
-	if sc.IsClient {
-		/*报告自己的监听信息*/
-		this.ReportService(s)
-	} else {
-		s.SetAttribute(SessionAttributeServiceFlag, 1)
-	}
-}
-
-func (this *serviceMgr) OnSessionClosed(s *netlib.Session) {
-	sc := s.GetSessionConfig()
-	if !sc.IsClient {
-		this.ClearServiceBySession(s)
-	}
-}
-
-func (this *serviceMgr) OnSessionIdle(s *netlib.Session) {
-}
-
-func (this *serviceMgr) OnPacketReceived(s *netlib.Session, packetid int, packet interface{}) {
-}
-
-func (this *serviceMgr) OnPacketSent(s *netlib.Session, data []byte) {
-}
-
-func (this *serviceMgr) RegisteService(s *netlib.Session, services []*mmoproto.ServiceInfo) {
-	logger.Trace("serviceMgr.RegisteService")
+func (this *serviceMgr) RegisteService(s *netlib.Session, services []*protocol.ServiceInfo) {
 	if this == nil || services == nil || len(services) == 0 {
 		return
 	}
@@ -73,23 +33,22 @@ func (this *serviceMgr) RegisteService(s *netlib.Session, services []*mmoproto.S
 		srvid := service.GetSrvId()
 		srvtype := service.GetSrvType()
 		if _, has := this.servicesPool[srvtype]; !has {
-			this.servicesPool[srvtype] = make(map[int32]*mmoproto.ServiceInfo)
+			this.servicesPool[srvtype] = make(map[int32]*protocol.ServiceInfo)
 		}
 		this.servicesPool[srvtype][srvid] = service
 
-		pack := &mmoproto.SSServiceInfo{}
+		pack := &protocol.SSServiceInfo{}
 		pack.Service = service
 		proto.SetDefaults(pack)
 		sessiontypes := GetCareSessionsByService(service.GetSrvType())
 		areaId := service.GetAreaId()
 		for _, v1 := range sessiontypes {
-			srvlib.ServerSessionMgrSington.Broadcast(pack, int(areaId), int(v1))
+			ServerSessionMgrSington.Broadcast(pack, int(areaId), int(v1))
 		}
 	}
 }
 
-func (this *serviceMgr) UnregisteService(service *mmoproto.ServiceInfo) {
-	logger.Trace("serviceMgr.RemoveService")
+func (this *serviceMgr) UnregisteService(service *protocol.ServiceInfo) {
 	if this == nil || service == nil {
 		return
 	}
@@ -100,18 +59,17 @@ func (this *serviceMgr) UnregisteService(service *mmoproto.ServiceInfo) {
 		delete(v, srvid)
 	}
 
-	pack := &mmoproto.SSServiceShut{}
+	pack := &protocol.SSServiceShut{}
 	pack.Service = service
 	proto.SetDefaults(pack)
 	sessiontypes := GetCareSessionsByService(service.GetSrvType())
 	areaId := service.GetAreaId()
 	for _, v1 := range sessiontypes {
-		srvlib.ServerSessionMgrSington.Broadcast(pack, int(areaId), int(v1))
+		ServerSessionMgrSington.Broadcast(pack, int(areaId), int(v1))
 	}
 }
 
 func (this *serviceMgr) OnRegiste(s *netlib.Session) {
-	logger.Trace("serviceMgr.OnRegiste")
 	if this == nil || s == nil {
 		return
 	}
@@ -119,16 +77,15 @@ func (this *serviceMgr) OnRegiste(s *netlib.Session) {
 	if s.GetAttribute(SessionAttributeServiceFlag) == nil {
 		return
 	}
-	attr := s.GetAttribute(srvlib.SessionAttributeServerInfo)
+	attr := s.GetAttribute(SessionAttributeServerInfo)
 	if attr != nil {
-		if srvInfo, ok := attr.(*libproto.SSSrvRegiste); ok && srvInfo != nil {
+		if srvInfo, ok := attr.(*protocol.SSSrvRegiste); ok && srvInfo != nil {
 			services := GetCareServicesBySession(srvInfo.GetType())
-			logger.Trace("serviceMgr.OnRegiste services:", services)
 			for _, v1 := range services {
 				if v2, has := this.servicesPool[v1]; has {
 					for _, v3 := range v2 {
-						func(si *mmoproto.ServiceInfo) {
-							pack := &mmoproto.SSServiceInfo{}
+						func(si *protocol.ServiceInfo) {
+							pack := &protocol.SSServiceInfo{}
 							proto.SetDefaults(pack)
 							pack.Service = si
 							logger.Trace("Server Type=", srvInfo.GetType(), " Id=", srvInfo.GetId(), " Name=", srvInfo.GetName(), " Service=", si)
@@ -145,10 +102,9 @@ func (this *serviceMgr) OnUnregiste(s *netlib.Session) {
 }
 
 func (this *serviceMgr) ClearServiceBySession(s *netlib.Session) {
-	logger.Trace("serviceMgr.ClearServiceBySession")
 	attr := s.GetAttribute(SessionAttributeServiceInfo)
 	if attr != nil {
-		if services, ok := attr.([]*mmoproto.ServiceInfo); ok {
+		if services, ok := attr.([]*protocol.ServiceInfo); ok {
 			for _, service := range services {
 				this.UnregisteService(service)
 			}
@@ -158,12 +114,11 @@ func (this *serviceMgr) ClearServiceBySession(s *netlib.Session) {
 }
 
 func (this *serviceMgr) ReportService(s *netlib.Session) {
-	logger.Trace("serviceMgr.ReportService")
 	acceptors := netlib.GetAcceptors()
 	cnt := len(acceptors)
 	if cnt > 0 {
-		pack := &mmoproto.SSServiceRegiste{
-			Services: make([]*mmoproto.ServiceInfo, 0, cnt),
+		pack := &protocol.SSServiceRegiste{
+			Services: make([]*protocol.ServiceInfo, 0, cnt),
 		}
 		proto.SetDefaults(pack)
 		for _, v := range acceptors {
@@ -184,7 +139,7 @@ func (this *serviceMgr) ReportService(s *netlib.Session) {
 			}
 
 			sc := v.GetSessionConfig()
-			si := &mmoproto.ServiceInfo{
+			si := &protocol.ServiceInfo{
 				AreaId:          proto.Int32(int32(sc.AreaId)),
 				SrvId:           proto.Int32(int32(sc.Id)),
 				SrvType:         proto.Int32(int32(sc.Type)),
@@ -220,30 +175,32 @@ func (this *serviceMgr) ReportService(s *netlib.Session) {
 	}
 }
 
+func (this *serviceMgr) GetServices(srvtype int32) map[int32]*protocol.ServiceInfo {
+	if v, has := this.servicesPool[srvtype]; has {
+		return v
+	}
+	return nil
+}
+
 func init() {
-	netlib.RegisteSessionHandlerCreator(ServiceHandlerName, func() netlib.SessionHandler {
-		return ServiceMgr
-	})
 
 	// service registe
-	netlib.RegisterFactory(int(mmoproto.MmoPacketID_PACKET_SS_SERVICE_REGISTE), netlib.PacketFactoryWrapper(func() interface{} {
-		return &mmoproto.SSServiceRegiste{}
+	netlib.RegisterFactory(int(protocol.SrvlibPacketID_PACKET_SS_SERVICE_REGISTE), netlib.PacketFactoryWrapper(func() interface{} {
+		return &protocol.SSServiceRegiste{}
 	}))
-	netlib.RegisterHandler(int(mmoproto.MmoPacketID_PACKET_SS_SERVICE_REGISTE), netlib.HandlerWrapper(func(s *netlib.Session, pack interface{}) error {
-		logger.Trace("receive service registe==", pack)
-		if sr, ok := pack.(*mmoproto.SSServiceRegiste); ok {
+	netlib.RegisterHandler(int(protocol.SrvlibPacketID_PACKET_SS_SERVICE_REGISTE), netlib.HandlerWrapper(func(s *netlib.Session, pack interface{}) error {
+		if sr, ok := pack.(*protocol.SSServiceRegiste); ok {
 			ServiceMgr.RegisteService(s, sr.GetServices())
 		}
 		return nil
 	}))
 
 	// service info
-	netlib.RegisterFactory(int(mmoproto.MmoPacketID_PACKET_SS_SERVICE_INFO), netlib.PacketFactoryWrapper(func() interface{} {
-		return &mmoproto.SSServiceInfo{}
+	netlib.RegisterFactory(int(protocol.SrvlibPacketID_PACKET_SS_SERVICE_INFO), netlib.PacketFactoryWrapper(func() interface{} {
+		return &protocol.SSServiceInfo{}
 	}))
-	netlib.RegisterHandler(int(mmoproto.MmoPacketID_PACKET_SS_SERVICE_INFO), netlib.HandlerWrapper(func(s *netlib.Session, pack interface{}) error {
-		if sr, ok := pack.(*mmoproto.SSServiceInfo); ok {
-			logger.Trace("receive service info==", sr)
+	netlib.RegisterHandler(int(protocol.SrvlibPacketID_PACKET_SS_SERVICE_INFO), netlib.HandlerWrapper(func(s *netlib.Session, pack interface{}) error {
+		if sr, ok := pack.(*protocol.SSServiceInfo); ok {
 			service := sr.GetService()
 			if service != nil {
 				sc := &netlib.SessionConfig{
@@ -286,12 +243,11 @@ func init() {
 	}))
 
 	// service shutdown
-	netlib.RegisterFactory(int(mmoproto.MmoPacketID_PACKET_SS_SERVICE_SHUT), netlib.PacketFactoryWrapper(func() interface{} {
-		return &mmoproto.SSServiceShut{}
+	netlib.RegisterFactory(int(protocol.SrvlibPacketID_PACKET_SS_SERVICE_SHUT), netlib.PacketFactoryWrapper(func() interface{} {
+		return &protocol.SSServiceShut{}
 	}))
-	netlib.RegisterHandler(int(mmoproto.MmoPacketID_PACKET_SS_SERVICE_SHUT), netlib.HandlerWrapper(func(s *netlib.Session, pack interface{}) error {
-		logger.Trace("receive service shut==", pack)
-		if sr, ok := pack.(*mmoproto.SSServiceShut); ok {
+	netlib.RegisterHandler(int(protocol.SrvlibPacketID_PACKET_SS_SERVICE_SHUT), netlib.HandlerWrapper(func(s *netlib.Session, pack interface{}) error {
+		if sr, ok := pack.(*protocol.SSServiceShut); ok {
 			service := sr.GetService()
 			if service != nil {
 				netlib.ShutConnector(service.GetIp(), int(service.GetPort()))
@@ -300,5 +256,5 @@ func init() {
 		return nil
 	}))
 
-	srvlib.ServerSessionMgrSington.SetListener(ServiceMgr)
+	ServerSessionMgrSington.SetListener(ServiceMgr)
 }

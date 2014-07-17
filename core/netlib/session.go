@@ -103,7 +103,7 @@ func (s *Session) sendRoutine() {
 		data []byte
 	)
 
-	for !s.quit {
+	for !s.quit || len(s.sendBuffer) != 0 {
 		select {
 		case msg, ok := <-s.sendBuffer:
 			if !ok {

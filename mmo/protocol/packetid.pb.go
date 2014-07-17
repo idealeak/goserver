@@ -16,20 +16,20 @@ var _ = math.Inf
 type MmoPacketID int32
 
 const (
-	MmoPacketID_PACKET_SS_SERVICE_REGISTE MmoPacketID = -3000
-	MmoPacketID_PACKET_SS_SERVICE_INFO    MmoPacketID = -3001
-	MmoPacketID_PACKET_SS_SERVICE_SHUT    MmoPacketID = -3002
+	MmoPacketID_PACKET_GB_CUR_LOAD     MmoPacketID = 1000
+	MmoPacketID_PACKET_GB_STATE_SWITCH MmoPacketID = 1001
+	MmoPacketID_PACKET_SC_GATEINFO     MmoPacketID = 1002
 )
 
 var MmoPacketID_name = map[int32]string{
-	-3000: "PACKET_SS_SERVICE_REGISTE",
-	-3001: "PACKET_SS_SERVICE_INFO",
-	-3002: "PACKET_SS_SERVICE_SHUT",
+	1000: "PACKET_GB_CUR_LOAD",
+	1001: "PACKET_GB_STATE_SWITCH",
+	1002: "PACKET_SC_GATEINFO",
 }
 var MmoPacketID_value = map[string]int32{
-	"PACKET_SS_SERVICE_REGISTE": -3000,
-	"PACKET_SS_SERVICE_INFO":    -3001,
-	"PACKET_SS_SERVICE_SHUT":    -3002,
+	"PACKET_GB_CUR_LOAD":     1000,
+	"PACKET_GB_STATE_SWITCH": 1001,
+	"PACKET_SC_GATEINFO":     1002,
 }
 
 func (x MmoPacketID) Enum() *MmoPacketID {

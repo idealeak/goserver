@@ -254,18 +254,18 @@ func (m *ServiceInfo) GetHandlerChain() []string {
 }
 
 type SSServiceRegiste struct {
-	PacketId         *MmoPacketID   `protobuf:"varint,1,req,enum=protocol.MmoPacketID,def=-3000" json:"PacketId,omitempty"`
-	Services         []*ServiceInfo `protobuf:"bytes,2,rep" json:"Services,omitempty"`
-	XXX_unrecognized []byte         `json:"-"`
+	PacketId         *SrvlibPacketID `protobuf:"varint,1,req,enum=protocol.SrvlibPacketID,def=-2005" json:"PacketId,omitempty"`
+	Services         []*ServiceInfo  `protobuf:"bytes,2,rep" json:"Services,omitempty"`
+	XXX_unrecognized []byte          `json:"-"`
 }
 
 func (m *SSServiceRegiste) Reset()         { *m = SSServiceRegiste{} }
 func (m *SSServiceRegiste) String() string { return proto.CompactTextString(m) }
 func (*SSServiceRegiste) ProtoMessage()    {}
 
-const Default_SSServiceRegiste_PacketId MmoPacketID = MmoPacketID_PACKET_SS_SERVICE_REGISTE
+const Default_SSServiceRegiste_PacketId SrvlibPacketID = SrvlibPacketID_PACKET_SS_SERVICE_REGISTE
 
-func (m *SSServiceRegiste) GetPacketId() MmoPacketID {
+func (m *SSServiceRegiste) GetPacketId() SrvlibPacketID {
 	if m != nil && m.PacketId != nil {
 		return *m.PacketId
 	}
@@ -280,18 +280,18 @@ func (m *SSServiceRegiste) GetServices() []*ServiceInfo {
 }
 
 type SSServiceInfo struct {
-	PacketId         *MmoPacketID `protobuf:"varint,1,req,enum=protocol.MmoPacketID,def=-3001" json:"PacketId,omitempty"`
-	Service          *ServiceInfo `protobuf:"bytes,2,req" json:"Service,omitempty"`
-	XXX_unrecognized []byte       `json:"-"`
+	PacketId         *SrvlibPacketID `protobuf:"varint,1,req,enum=protocol.SrvlibPacketID,def=-2006" json:"PacketId,omitempty"`
+	Service          *ServiceInfo    `protobuf:"bytes,2,req" json:"Service,omitempty"`
+	XXX_unrecognized []byte          `json:"-"`
 }
 
 func (m *SSServiceInfo) Reset()         { *m = SSServiceInfo{} }
 func (m *SSServiceInfo) String() string { return proto.CompactTextString(m) }
 func (*SSServiceInfo) ProtoMessage()    {}
 
-const Default_SSServiceInfo_PacketId MmoPacketID = MmoPacketID_PACKET_SS_SERVICE_INFO
+const Default_SSServiceInfo_PacketId SrvlibPacketID = SrvlibPacketID_PACKET_SS_SERVICE_INFO
 
-func (m *SSServiceInfo) GetPacketId() MmoPacketID {
+func (m *SSServiceInfo) GetPacketId() SrvlibPacketID {
 	if m != nil && m.PacketId != nil {
 		return *m.PacketId
 	}
@@ -306,18 +306,18 @@ func (m *SSServiceInfo) GetService() *ServiceInfo {
 }
 
 type SSServiceShut struct {
-	PacketId         *MmoPacketID `protobuf:"varint,1,req,enum=protocol.MmoPacketID,def=-3002" json:"PacketId,omitempty"`
-	Service          *ServiceInfo `protobuf:"bytes,2,req" json:"Service,omitempty"`
-	XXX_unrecognized []byte       `json:"-"`
+	PacketId         *SrvlibPacketID `protobuf:"varint,1,req,enum=protocol.SrvlibPacketID,def=-2007" json:"PacketId,omitempty"`
+	Service          *ServiceInfo    `protobuf:"bytes,2,req" json:"Service,omitempty"`
+	XXX_unrecognized []byte          `json:"-"`
 }
 
 func (m *SSServiceShut) Reset()         { *m = SSServiceShut{} }
 func (m *SSServiceShut) String() string { return proto.CompactTextString(m) }
 func (*SSServiceShut) ProtoMessage()    {}
 
-const Default_SSServiceShut_PacketId MmoPacketID = MmoPacketID_PACKET_SS_SERVICE_SHUT
+const Default_SSServiceShut_PacketId SrvlibPacketID = SrvlibPacketID_PACKET_SS_SERVICE_SHUT
 
-func (m *SSServiceShut) GetPacketId() MmoPacketID {
+func (m *SSServiceShut) GetPacketId() SrvlibPacketID {
 	if m != nil && m.PacketId != nil {
 		return *m.PacketId
 	}
