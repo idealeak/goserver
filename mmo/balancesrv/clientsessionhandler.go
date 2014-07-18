@@ -18,7 +18,8 @@ var (
 
 type gateService struct {
 	*libproto.ServiceInfo
-	load int
+	load   int
+	active bool
 }
 
 type SessionHandlerClientBalance struct {
@@ -46,7 +47,7 @@ func (sfcb *SessionHandlerClientBalance) OnSessionOpened(s *netlib.Session) {
 		/*补充新上线的gate*/
 		for k, v := range services {
 			if _, has := sfcb.gates[k]; !has {
-				sfcb.gates[k] = &gateService{ServiceInfo: v}
+				sfcb.gates[k] = &gateService{ServiceInfo: v, active: true}
 			}
 		}
 	}
@@ -55,7 +56,7 @@ func (sfcb *SessionHandlerClientBalance) OnSessionOpened(s *netlib.Session) {
 	var mls *libproto.ServiceInfo
 	var min = 100000
 	for _, v := range sfcb.gates {
-		if v.load < min {
+		if v.active && v.load < min {
 			mls = v.ServiceInfo
 		}
 	}
