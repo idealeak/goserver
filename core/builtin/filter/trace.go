@@ -34,7 +34,7 @@ func (sft *SessionFilterTrace) OnSessionClosed(s *netlib.Session) bool {
 }
 
 func (sft *SessionFilterTrace) OnSessionIdle(s *netlib.Session) bool {
-	logger.Tracef("SessionFilterTrace.OnSessionIdle sid=%v", s.Id)
+	//logger.Tracef("SessionFilterTrace.OnSessionIdle sid=%v", s.Id)
 	return true
 }
 

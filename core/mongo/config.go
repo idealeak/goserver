@@ -43,7 +43,7 @@ func (c *Configuration) Init() error {
 	// http://goneat.org/pkg/labix.org/v2/mgo/#Session.Mongo
 	// [mongodb://][user:pass@]host1[:port1][,host2[:port2],...][/database][?options]
 	url := fmt.Sprintf("mongodb://%s%s/%s", login, host, Config.Database)
-
+	fmt.Println(url)
 	session, err := mgo.Dial(url)
 	if err != nil {
 		return err

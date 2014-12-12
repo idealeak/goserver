@@ -10,7 +10,6 @@ type startIoService struct {
 }
 
 func (sis *startIoService) Done(o *basic.Object) error {
-
 	s := NetModule.newIoService(sis.sc)
 	if s != nil {
 		NetModule.pool[sis.sc.Id] = s

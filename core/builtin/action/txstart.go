@@ -1,6 +1,8 @@
 package action
 
 import (
+	"errors"
+	"strconv"
 	"time"
 
 	"code.google.com/p/goprotobuf/proto"
@@ -57,7 +59,7 @@ func (this *TxStartHandler) Process(session *netlib.Session, data interface{}) e
 		}
 
 		if !transact.ProcessTransStart(ptnp, mtnp, ts.GetCustomData(), mtnp.TimeOut) {
-			return nil
+			return errors.New("TxStartHandler error, tid=" + strconv.FormatInt(netmtnp.GetTransNodeID(), 16))
 		}
 	}
 	return nil

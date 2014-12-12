@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/idealeak/goserver/core/basic"
+	"github.com/idealeak/goserver/core"
 	"github.com/idealeak/goserver/core/utils"
 )
 
@@ -112,8 +112,8 @@ func (tk *Task) GetStatus() string {
 
 func (tk *Task) Run() error {
 	defer utils.DumpStackIfPanic("Task Run")
-	basic.Waitor.Add(1)
-	defer basic.Waitor.Done()
+	core.CoreObject().Waitor.Add(1)
+	defer core.CoreObject().Waitor.Done()
 
 	err := tk.DoFunc()
 	if err != nil {

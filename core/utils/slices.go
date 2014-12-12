@@ -43,6 +43,20 @@ func DeleteEmptySliceElements(slice interface{}) interface{} {
 	return DeleteEmptySliceElementsVal(reflect.ValueOf(slice)).Interface()
 }
 
+func DeleteSliceElementVal(sliceVal reflect.Value, idx int) reflect.Value {
+	if idx < 0 || idx >= sliceVal.Len() {
+		return sliceVal
+	}
+	before := sliceVal.Slice(0, idx)
+	after := sliceVal.Slice(idx+1, sliceVal.Len())
+	sliceVal = reflect.AppendSlice(before, after)
+	return sliceVal
+}
+
+func DeleteSliceElement(slice interface{}, idx int) interface{} {
+	return DeleteSliceElementVal(reflect.ValueOf(slice), idx).Interface()
+}
+
 // Implements sort.Interface
 type SortableInterfaceSlice struct {
 	Slice    []interface{}

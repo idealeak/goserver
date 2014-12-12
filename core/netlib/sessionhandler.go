@@ -20,6 +20,15 @@ type SessionHandler interface {
 	OnPacketSent(s *Session, data []byte)                          //run in session send goroutine
 }
 
+type BasicSessionHandler struct {
+}
+
+func (bsh *BasicSessionHandler) OnSessionOpened(s *Session)                                    {}
+func (bsh *BasicSessionHandler) OnSessionClosed(s *Session)                                    {}
+func (bsh *BasicSessionHandler) OnSessionIdle(s *Session)                                      {}
+func (bsh *BasicSessionHandler) OnPacketReceived(s *Session, packetid int, packet interface{}) {}
+func (bsh *BasicSessionHandler) OnPacketSent(s *Session, data []byte)                          {}
+
 type SessionHandlerChain struct {
 	handlers            *list.List
 	handlersInterestOps [InterestOps_Max]*list.List

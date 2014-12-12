@@ -8,7 +8,7 @@ import (
 var Config = Configuration{}
 
 type Configuration struct {
-	basic.Options
+	Options basic.Options
 }
 
 func (c *Configuration) Name() string {
@@ -25,6 +25,7 @@ func (c *Configuration) Init() error {
 	if c.Options.Interval <= 0 {
 		c.Options.Interval = 100000000
 	}
+
 	return nil
 }
 

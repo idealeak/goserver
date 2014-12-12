@@ -95,7 +95,7 @@ func (this *transactCoordinater) createTransNode(tnp *TransNodeParam, ud interfa
 	}
 	transHandler := GetHandler(tnp.Tt)
 	if transHandler == nil {
-		logger.Warn("transactCoordinater.createTransNode failed, TransNodeParam=%v", *tnp)
+		logger.Warn("transactCoordinater.createTransNode failed, not registe handler:", tnp.Tt)
 		return nil
 	}
 

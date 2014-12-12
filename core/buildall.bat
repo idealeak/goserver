@@ -31,3 +31,4 @@ cd ../transact
 go build
 cd ../utils
 go build
+pause

@@ -1,6 +1,9 @@
 package action
 
 import (
+	"errors"
+	"strconv"
+
 	"code.google.com/p/goprotobuf/proto"
 	"github.com/idealeak/goserver/core/builtin/protocol"
 	"github.com/idealeak/goserver/core/logger"
@@ -23,7 +26,7 @@ func (this *TxResultHandler) Process(session *netlib.Session, data interface{}) 
 	logger.Trace("TxResultHandler.Process")
 	if tr, ok := data.(*protocol.TransactResult); ok {
 		if !transact.ProcessTransResult(transact.TransNodeID(tr.GetMyTId()), transact.TransNodeID(tr.GetChildTId()), int(tr.GetRetCode()), tr.GetCustomData()) {
-			return nil
+			return errors.New("TxResultHandler error, tid=" + strconv.FormatInt(tr.GetMyTId(), 16))
 		}
 	}
 	return nil
