@@ -8,7 +8,7 @@ import (
 var Config = Configuration{}
 
 type Configuration struct {
-	basic.Options
+	Options basic.Options
 }
 
 func (c *Configuration) Name() string {

@@ -8,6 +8,7 @@ import (
 
 	"code.google.com/p/goprotobuf/proto"
 	"github.com/idealeak/goserver/core/builtin/protocol"
+	"github.com/idealeak/goserver/core/logger"
 	"github.com/idealeak/goserver/core/netlib"
 )
 
@@ -55,12 +56,16 @@ func (af *AuthenticationFilter) OnPacketReceived(s *netlib.Session, packetid int
 	if s.GetAttribute(SessionAttributeAuth) == nil {
 		if auth, ok := packet.(*protocol.SSPacketAuth); ok {
 			h := md5.New()
-			h.Write([]byte(fmt.Sprintf("%v;%v", auth.GetTimestamp(), s.GetSessionConfig().AuthKey)))
-			if hex.EncodeToString(h.Sum(nil)) != auth.GetAuthKey() {
+			rawText := fmt.Sprintf("%v;%v", auth.GetTimestamp(), s.GetSessionConfig().AuthKey)
+			logger.Infof("AuthenticationFilter rawtext=%v", rawText)
+			h.Write([]byte(rawText))
+			expectKey := hex.EncodeToString(h.Sum(nil))
+			if expectKey != auth.GetAuthKey() {
 				if af.SessionAuthHandler != nil {
 					af.SessionAuthHandler(s, false)
 				}
 				s.Close()
+				logger.Infof("AuthenticationFilter AuthKey error[expect:%v get:%v]", expectKey, auth.GetAuthKey())
 				return false
 			}
 			s.SetAttribute(SessionAttributeAuth, true)
@@ -70,6 +75,7 @@ func (af *AuthenticationFilter) OnPacketReceived(s *netlib.Session, packetid int
 			return false
 		} else {
 			s.Close()
+			logger.Info("AuthenticationFilter packet not expect")
 			return false
 		}
 	}

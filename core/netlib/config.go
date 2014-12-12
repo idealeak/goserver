@@ -23,40 +23,42 @@ type ServerInfo struct {
 }
 
 type SessionConfig struct {
-	Id              int
-	Type            int
-	AreaId          int
-	Name            string
-	Ip              string
-	Port            int
-	MaxDone         int
-	MaxPend         int
-	MaxPacket       int
-	MaxConn         int
-	ExtraConn       int
-	RcvBuff         int
-	SndBuff         int
-	SoLinger        int
-	WriteTimeout    time.Duration
-	ReadTimeout     time.Duration
-	IdleTimeout     time.Duration
-	KeepAlive       bool
-	NoDelay         bool
-	IsClient        bool
-	IsAutoReconn    bool
-	IsInnerLink     bool
-	AuthKey         string //Authentication Key
-	EncoderName     string //ProtocolEncoder name
-	DecoderName     string //ProtocolDecoder name
-	FilterChain     []string
-	HandlerChain    []string
-	IsKeepAlive     bool
-	SupportFragment bool
-	AllowMultiConn  bool
-	encoder         ProtocolEncoder
-	decoder         ProtocolDecoder
-	sfc             *SessionFilterChain
-	shc             *SessionHandlerChain
+	Id                     int
+	Type                   int
+	AreaId                 int
+	Name                   string
+	Ip                     string
+	Port                   int
+	MaxDone                int
+	MaxPend                int
+	MaxPacket              int
+	MaxConn                int
+	ExtraConn              int
+	RcvBuff                int
+	SndBuff                int
+	SoLinger               int
+	WriteTimeout           time.Duration
+	ReadTimeout            time.Duration
+	IdleTimeout            time.Duration
+	KeepAlive              bool
+	NoDelay                bool
+	IsClient               bool
+	IsAutoReconn           bool
+	IsInnerLink            bool
+	AuthKey                string //Authentication Key
+	EncoderName            string //ProtocolEncoder name
+	DecoderName            string //ProtocolDecoder name
+	ErrorPacketHandlerName string
+	FilterChain            []string
+	HandlerChain           []string
+	IsKeepAlive            bool
+	SupportFragment        bool
+	AllowMultiConn         bool
+	encoder                ProtocolEncoder
+	decoder                ProtocolDecoder
+	sfc                    *SessionFilterChain
+	shc                    *SessionHandlerChain
+	eph                    ErrorPacketHandler
 }
 
 func (c *Configuration) Name() string {
@@ -113,13 +115,28 @@ func (sc *SessionConfig) Init() {
 			}
 		}
 	}
+
+	if sc.ErrorPacketHandlerName != "" {
+		creator := GetErrorPacketHandlerCreator(sc.ErrorPacketHandlerName)
+		if creator != nil {
+			sc.eph = creator()
+		}
+	}
 	if sc.IdleTimeout <= 0 {
 		sc.IdleTimeout = 5 * time.Second
 	} else {
 		sc.IdleTimeout = sc.IdleTimeout * time.Second
 	}
-	sc.WriteTimeout = sc.WriteTimeout * time.Second
-	sc.ReadTimeout = sc.ReadTimeout * time.Second
+	if sc.WriteTimeout <= 0 {
+		sc.WriteTimeout = 30 * time.Second
+	} else {
+		sc.WriteTimeout = sc.WriteTimeout * time.Second
+	}
+	if sc.ReadTimeout <= 0 {
+		sc.ReadTimeout = 30 * time.Second
+	} else {
+		sc.ReadTimeout = sc.ReadTimeout * time.Second
+	}
 }
 
 func (sc *SessionConfig) GetFilter(name string) SessionFilter {

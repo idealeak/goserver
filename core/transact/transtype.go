@@ -2,4 +2,3 @@
 package transact
 
 type TransType int
-

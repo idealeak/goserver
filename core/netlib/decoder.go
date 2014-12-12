@@ -15,14 +15,14 @@ var (
 )
 
 type ProtocolDecoder interface {
-	Decode(s *Session, r io.Reader) (packetid int, packet interface{}, err error)
+	Decode(s *Session, r io.Reader) (packetid int, packet interface{}, err error, raw []byte)
 	FinishDecode(s *Session)
 }
 
 type DefaultProtocolDecoder struct {
 }
 
-func (pdi *DefaultProtocolDecoder) Decode(s *Session, r io.Reader) (packetid int, packet interface{}, err error) {
+func (pdi *DefaultProtocolDecoder) Decode(s *Session, r io.Reader) (packetid int, packet interface{}, err error, raw []byte) {
 	attr := s.GetAttribute(SessionAttributeRcvBuf)
 	if attr == nil {
 		attr = AllocRWBuf()
@@ -55,6 +55,7 @@ func (pdi *DefaultProtocolDecoder) Decode(s *Session, r io.Reader) (packetid int
 	if err != nil {
 		return
 	}
+	raw = rdbuf.buf[0:rdbuf.pheader.Len]
 	packetid, packet, err = UnmarshalPacket(rdbuf.buf[0:rdbuf.pheader.Len])
 	if err != nil {
 		return

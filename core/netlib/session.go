@@ -120,7 +120,10 @@ func (s *Session) sendRoutine() {
 
 			data, err = s.sc.encoder.Encode(s, msg, s.conn)
 			if err != nil {
-				panic(err)
+				logger.Trace("s.sc.encoder.Encode err", err)
+				if s.sc.IsInnerLink == false {
+					panic(err)
+				}
 			}
 			s.FirePacketSent(data)
 			s.lastSndTime = time.Now()
@@ -146,6 +149,7 @@ func (s *Session) recvRoutine() {
 		err      error
 		pck      interface{}
 		packetid int
+		raw      []byte
 	)
 
 	for !s.quit {
@@ -153,9 +157,24 @@ func (s *Session) recvRoutine() {
 			s.conn.SetReadDeadline(time.Now().Add(s.sc.ReadTimeout))
 		}
 
-		packetid, pck, err = s.sc.decoder.Decode(s, s.conn)
+		packetid, pck, err, raw = s.sc.decoder.Decode(s, s.conn)
 		if err != nil {
-			panic(err)
+			bUnproc := true
+			bPackErr := false
+			if _, ok := err.(*UnparsePacketTypeErr); ok {
+				bPackErr = true
+				if s.sc.eph != nil && s.sc.eph.OnErrorPacket(s, packetid, raw) {
+					bUnproc = false
+				}
+			}
+			if bUnproc {
+				logger.Trace("s.sc.decoder.Decode err ", err)
+				if s.sc.IsInnerLink == false {
+					panic(err)
+				} else if !bPackErr {
+					panic(err)
+				}
+			}
 		}
 		if pck != nil {
 			if s.FirePacketReceived(packetid, pck) {
@@ -176,11 +195,11 @@ func (s *Session) destroy() {
 }
 
 func (s *Session) IsIdle() bool {
-	var curTime = time.Now()
-	return s.lastRcvTime.Add(s.sc.IdleTimeout).Before(curTime)
+	return s.lastRcvTime.Add(s.sc.IdleTimeout).Before(time.Now())
 }
 
 func (s *Session) Close() {
+	//logger.Trace(utils.GetCallStack())
 	if s.quit {
 		return
 	}
@@ -205,25 +224,29 @@ func (s *Session) reapRoutine() {
 	s.scl.onClose(s)
 }
 
-func (s *Session) Send(msg interface{}, asyn ...bool) bool {
+func (s *Session) Send(msg interface{}, sync ...bool) bool {
 	if s.quit || s.shutSend {
 		return false
 	}
 
-	if len(asyn) > 0 {
+	if len(sync) > 0 {
 		select {
 		case s.sendBuffer <- msg:
-		default:
-			logger.Warn(s.Id, " send buffer full,data be droped")
-			s.Close()
+		case <-time.After(time.Duration(s.sc.WriteTimeout)):
+			logger.Info(s.Id, " send buffer full,data be droped")
+			if s.sc.IsInnerLink == false {
+				s.Close()
+			}
 			return false
 		}
 	} else {
 		select {
 		case s.sendBuffer <- msg:
-		case <-time.After(time.Second * time.Duration(s.sc.WriteTimeout)):
-			logger.Warn(s.Id, " send buffer full,data be droped")
-			s.Close()
+		default:
+			logger.Info(s.Id, " send buffer full,data be droped")
+			if s.sc.IsInnerLink == false {
+				s.Close()
+			}
 			return false
 		}
 	}

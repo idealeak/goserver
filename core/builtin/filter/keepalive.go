@@ -32,7 +32,7 @@ func (kf *KeepAliveFilter) OnSessionClosed(s *netlib.Session) bool {
 func (kf *KeepAliveFilter) OnSessionIdle(s *netlib.Session) bool {
 	p := &protocol.SSPacketKeepAlive{Flag: proto.Int32(0)}
 	proto.SetDefaults(p)
-	s.Send(p, true)
+	s.Send(p)
 	return true
 }
 
@@ -55,7 +55,7 @@ func init() {
 		if p, ok := data.(*protocol.SSPacketKeepAlive); ok {
 			if p.GetFlag() == 0 {
 				p.Flag = proto.Int32(1)
-				s.Send(p, true)
+				s.Send(p)
 			}
 		}
 		return nil

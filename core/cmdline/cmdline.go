@@ -117,5 +117,5 @@ func (this *CmdArgParser) ExtraStringArg(arg *CmdArg, val *string) {
 }
 
 func init() {
-	module.RegistePreloadModule(&cmdGoroutineWapper{}, 0)
+	//module.RegistePreloadModule(&cmdGoroutineWapper{}, 0)
 }

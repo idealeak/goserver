@@ -41,7 +41,6 @@ func (this *SignalHandler) RegisteHandler(s os.Signal, h Handler, ud interface{}
 	} else {
 		if _, has := v[h]; !has {
 			v[h] = ud
-			signal.Notify(this.sc, s)
 		} else {
 			return errors.New(fmt.Sprintf("SignalHandler.RegisterHandler repeate registe handle %v %v", s, h))
 		}
@@ -63,9 +62,11 @@ func (this *SignalHandler) UnregisteHandler(s os.Signal, h Handler) error {
 }
 
 func (this *SignalHandler) ProcessSignal() {
+	logger.Info("(this *SignalHandler) ProcessSignal()")
 	for {
 		select {
 		case s := <-this.sc:
+			logger.Info("-------->receive UnHandle Signal:", s)
 			this.lock.RLock()
 			defer this.lock.RUnlock()
 			if v, ok := this.mh[s]; ok {

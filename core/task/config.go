@@ -8,13 +8,13 @@ import (
 var Config = Configuration{}
 
 type WorkerConfig struct {
-	basic.Options
+	Options   basic.Options
 	WorkerCnt int
 }
 
 type Configuration struct {
-	basic.Options
-	Worker WorkerConfig
+	Options basic.Options
+	Worker  WorkerConfig
 }
 
 func (c *Configuration) Name() string {

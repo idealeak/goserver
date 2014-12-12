@@ -1,6 +1,6 @@
 package protocol;
 
-import "protocol/packetid.proto";
+import "protocol/corepacketid.proto";
 
 message SSPacketSlices {
 	required CoreBuiltinPacketID PacketId = 1 [default=PACKET_SS_SLICES];

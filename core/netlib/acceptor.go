@@ -172,24 +172,24 @@ func (a *Acceptor) procAccepted(s *Session) {
 
 func (a *Acceptor) procActive() {
 	var i int
-
+	var nowork bool
 	for _, v := range a.mapSessions {
-		if v.IsConned && v.IsIdle() {
-			v.FireSessionIdle()
-		} else {
-			for i = 0; i < a.sc.MaxDone; i++ {
-				if v.IsConned && len(v.recvBuffer) > 0 {
-					data, ok := <-v.recvBuffer
-					if !ok {
-						break
-					}
-					data.do()
-				} else {
+		nowork = true
+		for i = 0; i < a.sc.MaxDone; i++ {
+			if v.IsConned && len(v.recvBuffer) > 0 {
+				data, ok := <-v.recvBuffer
+				if !ok {
 					break
 				}
+				data.do()
+				nowork = false
+			} else {
+				break
 			}
 		}
-
+		if nowork && v.IsConned && v.IsIdle() {
+			v.FireSessionIdle()
+		}
 	}
 }
 

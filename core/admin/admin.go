@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"strconv"
-	"strings"
 
 	"github.com/idealeak/goserver/core/logger"
 	"github.com/idealeak/goserver/core/schedule"
@@ -23,7 +21,7 @@ func AdminIndex(rw http.ResponseWriter, r *http.Request) {
 	rw.Write([]byte("There are servral functions:\n"))
 	rw.Write([]byte(fmt.Sprintf("1. Get runtime profiling data by the pprof, http://%s:%d/prof\n", Config.AdminHttpAddr, Config.AdminHttpPort)))
 	rw.Write([]byte(fmt.Sprintf("2. Get healthcheck result from http://%s:%d/healthcheck\n", Config.AdminHttpAddr, Config.AdminHttpPort)))
-	rw.Write([]byte(fmt.Sprintf("3. Get current task infomation from taskhttp://%s:%d/task \n", Config.AdminHttpAddr, Config.AdminHttpPort)))
+	rw.Write([]byte(fmt.Sprintf("3. Get current task infomation from task http://%s:%d/task \n", Config.AdminHttpAddr, Config.AdminHttpPort)))
 	rw.Write([]byte(fmt.Sprintf("4. To run a task passed a param http://%s:%d/runtask\n", Config.AdminHttpAddr, Config.AdminHttpPort)))
 	rw.Write([]byte(fmt.Sprintf("5. Get all confige & router infomation http://%s:%d/listconf\n", Config.AdminHttpAddr, Config.AdminHttpPort)))
 
@@ -130,20 +128,10 @@ func (admin *AdminApp) Start(AdminHttpAddr string, AdminHttpPort int) {
 	addr := fmt.Sprintf("%s:%d", AdminHttpAddr, AdminHttpPort)
 	l, err := net.Listen("tcp", addr)
 	if err != nil {
-		logger.Critical("Admin Listen: ", err)
-	}
-	ipAndPort := strings.Split(l.Addr().String(), ":")
-	if len(ipAndPort) != 2 {
-		logger.Critical("Admin Listen Addr error")
+		logger.Critical("Admin Listen error: ", err)
 		return
 	}
-	if len(AdminHttpAddr) == 0 || AdminHttpAddr == "0" {
-		AdminHttpAddr = "127.0.0.1"
-	} else {
-		AdminHttpAddr = ipAndPort[0]
-	}
 
-	AdminHttpPort, _ = strconv.Atoi(ipAndPort[1])
 	logger.Infof("Admin Serve: %s", l.Addr())
 
 	go func() {

@@ -26,7 +26,7 @@ func (this *TxCtrlCmdHandler) Process(session *netlib.Session, data interface{})
 	logger.Trace("TxCtrlCmdHandler.Process")
 	if txcmd, ok := data.(*protocol.TransactCtrlCmd); ok {
 		if !transact.ProcessTransCmd(transact.TransNodeID(txcmd.GetTId()), transact.TransCmd(txcmd.GetCmd())) {
-			return errors.New("TxCtrlCmdHandler error, tid=" + strconv.FormatInt(txcmd.GetTId(), 10) + " cmd=" + strconv.Itoa(int(txcmd.GetCmd())))
+			return errors.New("TxCtrlCmdHandler error, tid=" + strconv.FormatInt(txcmd.GetTId(), 16) + " cmd=" + strconv.Itoa(int(txcmd.GetCmd())))
 		}
 	}
 	return nil
