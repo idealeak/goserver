@@ -16,5 +16,5 @@ func (cmd *cmdlineCommand) Done(o *basic.Object) error {
 }
 
 func PostCmd(p *basic.Object, exec cmdExecuter, args []string) bool {
-	return p.SendCommand(nil, &cmdlineCommand{exec: exec, args: args}, true)
+	return p.SendCommand(&cmdlineCommand{exec: exec, args: args}, true)
 }

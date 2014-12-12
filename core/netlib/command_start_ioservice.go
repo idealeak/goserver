@@ -20,6 +20,6 @@ func (sis *startIoService) Done(o *basic.Object) error {
 	return nil
 }
 
-func SendStartNetIoService(s *basic.Object, sc *SessionConfig) bool {
-	return core.CoreObject().SendCommand(s, &startIoService{sc: sc}, false)
+func SendStartNetIoService(sc *SessionConfig) bool {
+	return core.CoreObject().SendCommand(&startIoService{sc: sc}, false)
 }

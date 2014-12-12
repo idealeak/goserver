@@ -18,5 +18,5 @@ func SendTaskRes(o *basic.Object, t *Task) bool {
 	if o == nil {
 		return false
 	}
-	return o.SendCommand(TaskExecutor.Object, &taskResCommand{t: t}, true)
+	return o.SendCommand(&taskResCommand{t: t}, true)
 }

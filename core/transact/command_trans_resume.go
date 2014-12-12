@@ -14,6 +14,6 @@ func (trc *transactResumeCommand) Done(o *basic.Object) error {
 	return nil
 }
 
-func SendTranscatResume(s *basic.Object, tnode *TransNode) bool {
-	return tnode.ownerObj.SendCommand(s, &transactResumeCommand{tnode: tnode}, true)
+func SendTranscatResume(tnode *TransNode) bool {
+	return tnode.ownerObj.SendCommand(&transactResumeCommand{tnode: tnode}, true)
 }

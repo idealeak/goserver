@@ -16,6 +16,6 @@ func (tc *termCommand) Done(o *Object) error {
 	return nil
 }
 
-func SendTerm(p, o *Object) bool {
-	return o.SendCommand(p, termCmd, false)
+func SendTerm(o *Object) bool {
+	return o.SendCommand(termCmd, false)
 }

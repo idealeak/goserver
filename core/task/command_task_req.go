@@ -41,5 +41,5 @@ func sendTaskReqToExecutor(t *Task, name string) bool {
 		logger.Error(name, " You must specify the source object task.")
 		return false
 	}
-	return TaskExecutor.SendCommand(t.s, &taskReqCommand{t: t, n: name}, true)
+	return TaskExecutor.SendCommand(&taskReqCommand{t: t, n: name}, true)
 }

@@ -14,5 +14,5 @@ func (ttc *taskExeCommand) Done(o *basic.Object) error {
 }
 
 func SendTaskExe(o *basic.Object, t *Task) bool {
-	return o.SendCommand(TaskExecutor.Object, &taskExeCommand{t: t}, true)
+	return o.SendCommand(&taskExeCommand{t: t}, true)
 }

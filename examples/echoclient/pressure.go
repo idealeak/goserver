@@ -68,7 +68,7 @@ func (this *PressureTest) Init() {
 	cfg := Config.Connects
 	for i := 0; i < Config.Count; i++ {
 		cfg.Id += i
-		netlib.Connect(core.CoreObject(), &cfg)
+		netlib.Connect(&cfg)
 	}
 }
 
@@ -96,7 +96,7 @@ func (t *openTimer) OnTimer(h timer.TimerHandle, ud interface{}) bool {
 		logger.Info("Start ", StartCnt, " Times Connect")
 		cfg := Config.Connects
 		cfg.Id = cfg.Id - StartCnt
-		netlib.Connect(core.CoreObject(), &cfg)
+		netlib.Connect(&cfg)
 		StartCnt = StartCnt + 1
 	}
 

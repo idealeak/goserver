@@ -104,7 +104,7 @@ func (this *TransNode) execute(ud interface{}) TransExeResult {
 	this.start = true
 	ret := this.handler.OnExcute(this, ud)
 	if ret == TransExeResult_Yield {
-		return this.Yield(this.ownerObj)
+		return this.Yield()
 	}
 
 	return this.doneExecRet(ret)
@@ -313,15 +313,15 @@ func (this *TransNode) GetChildTransParam(childid TransNodeID) *TransNodeParam {
 	return nil
 }
 
-func (this *TransNode) Yield(o *basic.Object) TransExeResult {
+func (this *TransNode) Yield() TransExeResult {
 	this.yield = true
-	SendTranscatYield(o, this)
+	SendTranscatYield(this)
 	return TransExeResult_Success
 }
 
-func (this *TransNode) Resume(o *basic.Object) TransExeResult {
+func (this *TransNode) Resume() TransExeResult {
 	this.resume = true
-	SendTranscatResume(o, this)
+	SendTranscatResume(this)
 	return TransExeResult_Success
 }
 

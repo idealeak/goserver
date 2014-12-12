@@ -14,6 +14,6 @@ func (trc *transactYieldCommand) Done(o *basic.Object) error {
 	return nil
 }
 
-func SendTranscatYield(s *basic.Object, tnode *TransNode) bool {
-	return tnode.ownerObj.SendCommand(s, &transactYieldCommand{tnode: tnode}, true)
+func SendTranscatYield(tnode *TransNode) bool {
+	return tnode.ownerObj.SendCommand(&transactYieldCommand{tnode: tnode}, true)
 }

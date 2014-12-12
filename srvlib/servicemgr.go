@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"code.google.com/p/goprotobuf/proto"
-	"github.com/idealeak/goserver/core"
 	"github.com/idealeak/goserver/core/logger"
 	"github.com/idealeak/goserver/core/netlib"
 	"github.com/idealeak/goserver/srvlib/protocol"
@@ -233,7 +232,7 @@ func init() {
 					HandlerChain:    service.GetHandlerChain(),
 				}
 				sc.Init()
-				err := netlib.Connect(core.CoreObject(), sc)
+				err := netlib.Connect(sc)
 				if err != nil {
 					logger.Warn("connect server failed err:", err)
 				}

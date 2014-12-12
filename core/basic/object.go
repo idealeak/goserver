@@ -53,7 +53,8 @@ type Object struct {
 	owner *Object
 
 	//	Command queue
-	que chan Command
+	que      chan Command
+	logicQue chan Command
 
 	//	Configuration Options
 	opt Options
@@ -89,20 +90,25 @@ func NewObject(id int, name string, opt Options, sinker Sinker) *Object {
 
 	o.init()
 	go o.ProcessCommand()
+	go o.dispatchCommand()
 	return o
 }
 
 func (o *Object) init() {
 	if o.opt.QueueBacklog < DefaultQueueBacklog {
 		o.que = make(chan Command, DefaultQueueBacklog)
+		o.logicQue = make(chan Command, DefaultQueueBacklog)
 	} else {
 		o.que = make(chan Command, o.opt.QueueBacklog)
+		o.logicQue = make(chan Command, o.opt.QueueBacklog)
 	}
 }
 
 //	Active inner goroutine
 func (o *Object) Active() {
 	o.waitActive <- struct{}{}
+	o.waitActive <- struct{}{}
+
 }
 
 //  Launch the supplied object and become its owner.
@@ -159,7 +165,7 @@ func (o *Object) checkTermAcks() {
 		//  The root object has nobody to confirm the termination to.
 		//  Other nodes will confirm the termination to the owner.
 		if o.owner != nil {
-			SendTermAck(o, o.owner)
+			SendTermAck(o.owner)
 		}
 
 		//  Deallocate the resources.
@@ -185,7 +191,7 @@ func (o *Object) Terminate(s *Object) {
 	}
 
 	//  If I am an owned object, I'll ask my owner to terminate me.
-	SendTermReq(s, o.owner, o)
+	SendTermReq(o.owner, o)
 }
 
 //  Term handler is protocted rather than private so that it can
@@ -199,7 +205,7 @@ func (o *Object) processTerm() {
 
 	//  Send termination request to all owned objects.
 	for _, c := range o.childs {
-		SendTerm(o, c)
+		SendTerm(c)
 	}
 	o.termAcks += len(o.childs)
 
@@ -215,24 +221,49 @@ func (o *Object) processTerm() {
 func (o *Object) processDestroy() {
 	o.terminated = true
 	close(o.que)
+	close(o.logicQue)
 }
 
 //	Enqueue command
-func (o *Object) SendCommand(s *Object, c Command, incseq bool) bool {
+func (o *Object) SendCommand(c Command, incseq bool) bool {
 
 	if incseq {
 		o.incSeqnum()
 	}
 
-	if s == o {
-		//  If you sent and executed in the same goroutine, then directly execute command
-		//  This avoids deadlock, but may result in an incorrect command sequence on
-		o.safeDone(c)
-	} else {
-		o.que <- c
-	}
+	//if queue command que chan, when call SendCommand from Process goroutine,
+	//it may produce deadlock, so just queue command to logicQue
+	o.logicQue <- c
 
 	return true
+}
+
+func (o *Object) dispatchCommand() {
+
+	var (
+		c  Command
+		ok bool
+	)
+
+	//wait for active
+	<-o.waitActive
+
+	//deamon or no
+	if o.Waitor != nil {
+		o.Waitor.Add(1)
+		defer o.Waitor.Done()
+	}
+
+	for !o.terminated {
+		select {
+		case c, ok = <-o.logicQue:
+			if ok {
+				o.que <- c
+			} else {
+				return
+			}
+		}
+	}
 }
 
 //	Dequeue command and process it.

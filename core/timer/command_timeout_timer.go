@@ -12,7 +12,7 @@ func (tc *timeoutCommand) Done(o *basic.Object) error {
 	defer o.ProcessSeqnum()
 	if tc.te.ta.OnTimer(tc.te.h, tc.te.ud) == false {
 		if tc.te.times < 0 {
-			StopTimer(tc.te.sink, tc.te.h)
+			StopTimer(tc.te.h)
 		}
 	}
 	return nil
@@ -23,5 +23,5 @@ func SendTimeout(te *TimerEntity) bool {
 		return false
 	}
 
-	return te.sink.SendCommand(TimerModule.Object, &timeoutCommand{te: te}, true)
+	return te.sink.SendCommand(&timeoutCommand{te: te}, true)
 }

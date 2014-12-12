@@ -12,7 +12,7 @@ func (oc *ownCommand) Done(o *Object) error {
 	//  immediately asked to terminate. Note that linger is set to zero.
 	if o.terminating {
 		o.termAcks++
-		SendTerm(o, oc.c)
+		SendTerm(oc.c)
 		return nil
 	}
 
@@ -26,5 +26,5 @@ func (oc *ownCommand) Done(o *Object) error {
 }
 
 func SendOwn(p *Object, c *Object) bool {
-	return p.SendCommand(c, &ownCommand{c: c}, true)
+	return p.SendCommand(&ownCommand{c: c}, true)
 }

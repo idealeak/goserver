@@ -20,6 +20,6 @@ func (tac *termAckCommand) Done(o *Object) error {
 	return nil
 }
 
-func SendTermAck(o, p *Object) bool {
-	return p.SendCommand(o, termAckCmd, false)
+func SendTermAck(p *Object) bool {
+	return p.SendCommand(termAckCmd, false)
 }

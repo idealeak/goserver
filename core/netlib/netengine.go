@@ -2,7 +2,6 @@ package netlib
 
 import (
 	"errors"
-	"github.com/idealeak/goserver/core/basic"
 	"github.com/idealeak/goserver/core/logger"
 	"github.com/idealeak/goserver/core/module"
 	"github.com/idealeak/goserver/core/profile"
@@ -57,19 +56,19 @@ func (e *NetEngine) GetAcceptors() []*Acceptor {
 	return acceptors
 }
 
-func (e *NetEngine) Connect(s *basic.Object, sc *SessionConfig) error {
+func (e *NetEngine) Connect(sc *SessionConfig) error {
 	if e.quit {
 		return errors.New("NetEngine already quiting")
 	}
-	SendStartNetIoService(s, sc)
+	SendStartNetIoService(sc)
 	return nil
 }
 
-func (e *NetEngine) Listen(s *basic.Object, sc *SessionConfig) error {
+func (e *NetEngine) Listen(sc *SessionConfig) error {
 	if e.quit {
 		return errors.New("NetEngine already quiting")
 	}
-	SendStartNetIoService(s, sc)
+	SendStartNetIoService(sc)
 	return nil
 }
 
@@ -177,12 +176,12 @@ func init() {
 	module.RegisteModule(NetModule, 0, 0)
 }
 
-func Connect(o *basic.Object, sc *SessionConfig) error {
-	return NetModule.Connect(o, sc)
+func Connect(sc *SessionConfig) error {
+	return NetModule.Connect(sc)
 }
 
-func Listen(o *basic.Object, sc *SessionConfig) error {
-	return NetModule.Listen(o, sc)
+func Listen(sc *SessionConfig) error {
+	return NetModule.Listen(sc)
 }
 
 func GetAcceptors() []*Acceptor {

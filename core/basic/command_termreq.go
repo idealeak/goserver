@@ -20,7 +20,7 @@ func (trc *termReqCommand) Done(o *Object) error {
 		o.termAcks++
 		//  Note that this object is the root of the (partial shutdown) thus, its
 		//  value of linger is used, rather than the value stored by the children.
-		SendTerm(o, trc.c)
+		SendTerm(trc.c)
 		//	Remove child
 		delete(o.childs, trc.c.Id)
 	}
@@ -28,6 +28,6 @@ func (trc *termReqCommand) Done(o *Object) error {
 	return nil
 }
 
-func SendTermReq(s *Object, p *Object, c *Object) bool {
-	return p.SendCommand(s, &termReqCommand{c: c}, false)
+func SendTermReq(p *Object, c *Object) bool {
+	return p.SendCommand(&termReqCommand{c: c}, false)
 }

@@ -20,6 +20,6 @@ func (stc *stopTimerCommand) Done(o *basic.Object) error {
 	return nil
 }
 
-func StopTimer(s *basic.Object, h TimerHandle) bool {
-	return TimerModule.SendCommand(s, &stopTimerCommand{h: h}, true)
+func StopTimer(h TimerHandle) bool {
+	return TimerModule.SendCommand(&stopTimerCommand{h: h}, true)
 }

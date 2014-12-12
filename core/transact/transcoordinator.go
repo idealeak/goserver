@@ -72,7 +72,7 @@ func (this *transactCoordinater) releaseTrans(tnode *TransNode) {
 	if this == nil || tnode == nil {
 		return
 	}
-	timer.StopTimer(core.CoreObject(), tnode.timeHandle)
+	timer.StopTimer(tnode.timeHandle)
 	this.delTransNode(tnode)
 }
 
