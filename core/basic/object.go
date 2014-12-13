@@ -1,6 +1,8 @@
 package basic
 
 import (
+	"runtime"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -22,6 +24,7 @@ var (
 //		asynchronous message queue
 type Object struct {
 	*utils.Waitor
+	sync.Mutex
 	//  Identify
 	Id int
 
@@ -34,6 +37,9 @@ type Object struct {
 
 	//  True if termination was already finished.
 	terminated bool
+
+	//enlarge que flag
+	enlargingQue int32
 
 	//  Sequence number of the last command sent to this object.
 	sentSeqnum uint32
@@ -53,8 +59,7 @@ type Object struct {
 	owner *Object
 
 	//	Command queue
-	que      chan Command
-	logicQue chan Command
+	que chan Command
 
 	//	Configuration Options
 	opt Options
@@ -64,10 +69,9 @@ type Object struct {
 
 	//
 	waitActive chan struct{}
-
 	//
-	Consumer <-chan Command
-	Producer chan<- Command
+	waitEnlarge chan struct{}
+
 	//	UserData
 	UserData interface{}
 	//
@@ -76,37 +80,37 @@ type Object struct {
 	tLastTick time.Time
 	//
 	timer *time.Ticker
+	//
+
 }
 
 func NewObject(id int, name string, opt Options, sinker Sinker) *Object {
 	o := &Object{
-		Id:         id,
-		Name:       name,
-		opt:        opt,
-		sinker:     sinker,
-		tLastTick:  time.Now(),
-		waitActive: make(chan struct{}),
+		Id:          id,
+		Name:        name,
+		opt:         opt,
+		sinker:      sinker,
+		tLastTick:   time.Now(),
+		waitActive:  make(chan struct{}),
+		waitEnlarge: make(chan struct{}, 1),
 	}
 
 	o.init()
 	go o.ProcessCommand()
-	go o.dispatchCommand()
+
 	return o
 }
 
 func (o *Object) init() {
 	if o.opt.QueueBacklog < DefaultQueueBacklog {
 		o.que = make(chan Command, DefaultQueueBacklog)
-		o.logicQue = make(chan Command, DefaultQueueBacklog)
 	} else {
 		o.que = make(chan Command, o.opt.QueueBacklog)
-		o.logicQue = make(chan Command, o.opt.QueueBacklog)
 	}
 }
 
 //	Active inner goroutine
 func (o *Object) Active() {
-	o.waitActive <- struct{}{}
 	o.waitActive <- struct{}{}
 
 }
@@ -221,49 +225,58 @@ func (o *Object) processTerm() {
 func (o *Object) processDestroy() {
 	o.terminated = true
 	close(o.que)
-	close(o.logicQue)
 }
 
 //	Enqueue command
 func (o *Object) SendCommand(c Command, incseq bool) bool {
+	if !atomic.CompareAndSwapInt32(&o.enlargingQue, 0, 0) {
+		o.Lock()
+		o.Unlock()
+	}
 
 	if incseq {
 		o.incSeqnum()
 	}
 
-	//if queue command que chan, when call SendCommand from Process goroutine,
-	//it may produce deadlock, so just queue command to logicQue
-	o.logicQue <- c
+	defer func() {
+		if err := recover(); err != nil {
+			//queue maybe enlarging,and be closed
+			o.SendCommand(c, false)
+		}
+	}()
 
-	return true
-}
-
-func (o *Object) dispatchCommand() {
-
-	var (
-		c  Command
-		ok bool
-	)
-
-	//wait for active
-	<-o.waitActive
-
-	//deamon or no
-	if o.Waitor != nil {
-		o.Waitor.Add(1)
-		defer o.Waitor.Done()
-	}
-
-	for !o.terminated {
-		select {
-		case c, ok = <-o.logicQue:
-			if ok {
-				o.que <- c
-			} else {
-				return
+	//If the queue is full, then enlarge it to two times the size of
+redo:
+	select {
+	case o.que <- c:
+	default:
+		//Here the lock competition may be more intense when enlarge the beginning,
+		//may be enlarge goroutine not to snatch the lock, so in this case is very bad, but no way, let him go
+		if atomic.CompareAndSwapInt32(&o.enlargingQue, 0, 1) {
+			o.Lock()
+			defer func() {
+				o.waitEnlarge <- struct{}{}
+				o.Unlock()
+			}()
+			oldCap := cap(o.que)
+			newCap := oldCap * 2
+			newQue := make(chan Command, newCap)
+			//Here closed out queue is to inform other goroutine, then send later.
+			close(o.que)
+			for cc := range o.que {
+				newQue <- cc
 			}
+			newQue <- c
+			o.que = newQue
+			atomic.StoreInt32(&o.enlargingQue, 0)
+			return true
+		} else {
+			runtime.Gosched()
+			goto redo
 		}
 	}
+
+	return false
 }
 
 //	Dequeue command and process it.
@@ -290,36 +303,43 @@ func (o *Object) ProcessCommand() {
 		o.tLastTick = time.Now()
 	}
 
+	//There is a small defect;
+	//when the queue enlarging, there may be a command sequence can not be guaranteed
+	//Because enlarging may occur in other goroutine
 	for !o.terminated {
+		if !atomic.CompareAndSwapInt32(&o.enlargingQue, 0, 0) {
+			//wait enlarge queue
+			<-o.waitEnlarge
+		}
 		if tickMode {
 			select {
+			case <-o.waitEnlarge:
 			case c, ok = <-o.que:
-				if ok {
+				if c != nil {
 					o.safeDone(c)
-				} else {
-					return
 				}
-			case c, ok = <-o.Consumer:
-				if ok {
-					o.safeDone(c)
-				} else {
-					return
+				if !ok {
+					if atomic.LoadInt32(&o.enlargingQue) != 0 {
+						continue
+					} else {
+						return
+					}
 				}
 			case <-o.timer.C:
 			}
 		} else {
 			select {
+			case <-o.waitEnlarge:
 			case c, ok = <-o.que:
-				if ok {
+				if c != nil {
 					o.safeDone(c)
-				} else {
-					return
 				}
-			case c, ok = <-o.Consumer:
-				if ok {
-					o.safeDone(c)
-				} else {
-					return
+				if !ok {
+					if atomic.LoadInt32(&o.enlargingQue) != 0 {
+						continue
+					} else {
+						return
+					}
 				}
 			}
 		}
