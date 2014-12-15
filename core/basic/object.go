@@ -91,7 +91,7 @@ func NewObject(id int, name string, opt Options, sinker Sinker) *Object {
 		opt:         opt,
 		sinker:      sinker,
 		tLastTick:   time.Now(),
-		waitActive:  make(chan struct{}),
+		waitActive:  make(chan struct{}, 1),
 		waitEnlarge: make(chan struct{}, 1),
 	}
 
@@ -112,7 +112,6 @@ func (o *Object) init() {
 //	Active inner goroutine
 func (o *Object) Active() {
 	o.waitActive <- struct{}{}
-
 }
 
 //  Launch the supplied object and become its owner.
@@ -252,31 +251,36 @@ redo:
 	default:
 		//Here the lock competition may be more intense when enlarge the beginning,
 		//may be enlarge goroutine not to snatch the lock, so in this case is very bad, but no way, let him go
-		if atomic.CompareAndSwapInt32(&o.enlargingQue, 0, 1) {
-			o.Lock()
-			defer func() {
-				o.waitEnlarge <- struct{}{}
-				o.Unlock()
-			}()
-			oldCap := cap(o.que)
-			newCap := oldCap * 2
-			newQue := make(chan Command, newCap)
-			//Here closed out queue is to inform other goroutine, then send later.
-			close(o.que)
-			for cc := range o.que {
-				newQue <- cc
-			}
-			newQue <- c
-			o.que = newQue
-			atomic.StoreInt32(&o.enlargingQue, 0)
-			return true
-		} else {
-			runtime.Gosched()
+		o.Lock()
+		if len(o.que) < cap(o.que) {
+			o.Unlock()
 			goto redo
+		} else {
+			if atomic.CompareAndSwapInt32(&o.enlargingQue, 0, 1) {
+				defer func() {
+					atomic.StoreInt32(&o.enlargingQue, 0)
+					o.Unlock()
+				}()
+				oldCap := cap(o.que)
+				newCap := oldCap * 2
+				newQue := make(chan Command, newCap)
+				//Here closed out queue is to inform other goroutine, then send later.
+				close(o.que)
+				for cc := range o.que {
+					newQue <- cc
+				}
+				newQue <- c
+				o.que = newQue
+				return true
+			} else {
+				o.Unlock()
+				runtime.Gosched()
+				goto redo
+			}
 		}
 	}
 
-	return false
+	return true
 }
 
 //	Dequeue command and process it.
@@ -309,36 +313,35 @@ func (o *Object) ProcessCommand() {
 	for !o.terminated {
 		if !atomic.CompareAndSwapInt32(&o.enlargingQue, 0, 0) {
 			//wait enlarge queue
-			<-o.waitEnlarge
+			runtime.Gosched()
+			continue
 		}
 		if tickMode {
 			select {
-			case <-o.waitEnlarge:
 			case c, ok = <-o.que:
 				if c != nil {
 					o.safeDone(c)
 				}
 				if !ok {
-					if atomic.LoadInt32(&o.enlargingQue) != 0 {
-						continue
-					} else {
+					if o.terminated {
 						return
+					} else {
+						continue
 					}
 				}
 			case <-o.timer.C:
 			}
 		} else {
 			select {
-			case <-o.waitEnlarge:
 			case c, ok = <-o.que:
 				if c != nil {
 					o.safeDone(c)
 				}
 				if !ok {
-					if atomic.LoadInt32(&o.enlargingQue) != 0 {
-						continue
-					} else {
+					if o.terminated {
 						return
+					} else {
+						continue
 					}
 				}
 			}
