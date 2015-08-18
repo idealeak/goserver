@@ -7,12 +7,12 @@ import (
 
 var (
 	ConnectorMgr = &connectorMgr{
-		pool: make(map[string]*Connector),
+		pool: make(map[string]Connector),
 	}
 )
 
 type connectorMgr struct {
-	pool map[string]*Connector
+	pool map[string]Connector
 	lock sync.Mutex
 }
 
@@ -26,14 +26,15 @@ func (cm *connectorMgr) isConnecting(sc *SessionConfig) bool {
 	return false
 }
 
-func (cm *connectorMgr) registeConnector(c *Connector) {
-	strKey := fmt.Sprintf("%v:%v", c.sc.Ip, c.sc.Port)
+func (cm *connectorMgr) registeConnector(c Connector) {
+	sc := c.GetSessionConfig()
+	strKey := fmt.Sprintf("%v:%v", sc.Ip, sc.Port)
 	cm.lock.Lock()
 	defer cm.lock.Unlock()
 	cm.pool[strKey] = c
 }
 
-func (cm *connectorMgr) unregisteConnector(c *Connector) {
+func (cm *connectorMgr) unregisteConnector(c Connector) {
 	cm.lock.Lock()
 	defer cm.lock.Unlock()
 	for k, v := range cm.pool {

@@ -68,7 +68,6 @@ func UnmarshalPacket(data []byte) (int, interface{}, error) {
 }
 
 func MarshalPacket(pack interface{}) ([]byte, error) {
-
 	et := typetest(pack)
 	if et < EncodingTypeNil || et > EncodingTypeMax {
 		return nil, errors.New("MarshalPacket unkown data type")

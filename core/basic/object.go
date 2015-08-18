@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/idealeak/goserver/core/logger"
 	"github.com/idealeak/goserver/core/utils"
 )
 
@@ -350,6 +351,9 @@ func (o *Object) ProcessCommand() {
 		if tickMode && time.Now().After(o.tLastTick.Add(o.opt.Interval)) {
 			o.safeTick()
 			o.tLastTick = time.Now()
+			if len(o.que) > o.opt.MaxDone {
+				logger.Warn("(", o.Name, ") object queue cmd count(", len(o.que), ") maxdone(", o.opt.MaxDone, ")")
+			}
 		}
 	}
 }

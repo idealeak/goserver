@@ -17,7 +17,7 @@ func (c *Configuration) Name() string {
 func (c *Configuration) Init() error {
 	if c.SupportSignal {
 		//demon goroutine
-		go SignalHandlerModule.ProcessSignal()
+		//go SignalHandlerModule.ProcessSignal()
 	}
 	return nil
 }

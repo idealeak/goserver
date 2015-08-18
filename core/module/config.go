@@ -1,6 +1,8 @@
 package module
 
 import (
+	"time"
+
 	"github.com/idealeak/goserver/core"
 	"github.com/idealeak/goserver/core/basic"
 )
@@ -23,7 +25,9 @@ func (c *Configuration) Init() error {
 		c.Options.MaxDone = 1024
 	}
 	if c.Options.Interval <= 0 {
-		c.Options.Interval = 100000000
+		c.Options.Interval = time.Millisecond * 10
+	} else {
+		c.Options.Interval = time.Millisecond * c.Options.Interval
 	}
 
 	return nil

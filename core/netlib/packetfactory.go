@@ -2,9 +2,16 @@ package netlib
 
 import (
 	"fmt"
+	"reflect"
 )
 
 var factories = make(map[int]PacketFactory)
+var packetQuickMap = make(map[reflect.Type]packetInfo)
+
+type packetInfo struct {
+	ptype int
+	pid   int
+}
 
 type PacketFactory interface {
 	CreatePacket() interface{}
@@ -22,6 +29,16 @@ func RegisterFactory(packetId int, factory PacketFactory) {
 	}
 
 	factories[packetId] = factory
+	tp := factory.CreatePacket()
+	if tp != nil {
+		pid, err := getPacketId(tp)
+		if err != nil {
+			panic(err)
+		}
+
+		pt := typetest(tp)
+		packetQuickMap[reflect.TypeOf(tp)] = packetInfo{ptype: pt, pid: pid}
+	}
 }
 
 func CreatePacket(packetId int) interface{} {
@@ -29,4 +46,12 @@ func CreatePacket(packetId int) interface{} {
 		return v.CreatePacket()
 	}
 	return nil
+}
+
+func GetPacketTypeAndId(pack interface{}) (int, int) {
+	t := reflect.TypeOf(pack)
+	if tp, exist := packetQuickMap[t]; exist {
+		return tp.ptype, tp.pid
+	}
+	return 0, 0
 }

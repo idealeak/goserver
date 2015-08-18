@@ -50,6 +50,8 @@ func (ssm *ServerSessionMgr) RegisteSession(s *netlib.Session) bool {
 				ssm.listener.OnRegiste(s)
 			}
 		}
+	} else {
+		logger.Tracef("ServerSessionMgr.RegisteSession SessionAttributeServerInfo=nil")
 	}
 	return true
 }
@@ -95,6 +97,17 @@ func (ssm *ServerSessionMgr) GetSessions(areaId, srvType int) (sessions []*netli
 		}
 	}
 	return
+}
+
+func (ssm *ServerSessionMgr) GetServerId(areaId, srvType int) int {
+	if a, exist := ssm.sessions[areaId]; exist {
+		if b, exist := a[srvType]; exist {
+			for sid, _ := range b {
+				return sid
+			}
+		}
+	}
+	return -1
 }
 
 func (ssm *ServerSessionMgr) Broadcast(pack interface{}, areaId, srvType int) {

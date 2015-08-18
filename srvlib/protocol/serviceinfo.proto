@@ -32,6 +32,8 @@ message ServiceInfo {
 	optional string DecoderName = 27;
 	repeated string FilterChain = 28;
 	repeated string HandlerChain = 29;
+	optional string Protocol = 30;
+	optional string Path = 31;
 }
 
 message SSServiceRegiste {

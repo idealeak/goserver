@@ -52,3 +52,9 @@ func (csm *ClientSessionMgr) Broadcast(pack interface{}) {
 func (csm *ClientSessionMgr) Count() int {
 	return len(csm.sessions)
 }
+
+func (csm *ClientSessionMgr) CloseAll() {
+	for _, s := range csm.sessions {
+		s.Close()
+	}
+}

@@ -1,0 +1,10 @@
+package protocol;
+
+enum CoreBuiltinPacketID {	
+	PACKET_SS_TX_START	= -1000;
+	PACKET_SS_TX_CMD	= -1001;
+	PACKET_SS_TX_RESULT = -1002;
+	PACKET_SS_SLICES 	= -1003;
+	PACKET_SS_AUTH	 	= -1004;
+	PACKET_SS_KEEPALIVE = -1005;
+}

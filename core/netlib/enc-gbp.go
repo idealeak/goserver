@@ -7,7 +7,7 @@ import (
 	"code.google.com/p/goprotobuf/proto"
 )
 
-var ErrorTypeNotFit = errors.New("pack id not proto.Message type")
+var ErrorTypeNotFit = errors.New("packet not proto.Message type")
 
 var Gpb = &GbpEncDecoder{}
 

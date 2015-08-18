@@ -83,13 +83,13 @@ func (this *serviceMgr) OnRegiste(s *netlib.Session) {
 			for _, v1 := range services {
 				if v2, has := this.servicesPool[v1]; has {
 					for _, v3 := range v2 {
-						func(si *protocol.ServiceInfo) {
+						func(si *protocol.ServiceInfo, sInfo *protocol.SSSrvRegiste) {
 							pack := &protocol.SSServiceInfo{}
 							proto.SetDefaults(pack)
 							pack.Service = si
-							logger.Trace("Server Type=", srvInfo.GetType(), " Id=", srvInfo.GetId(), " Name=", srvInfo.GetName(), " Service=", si)
+							logger.Trace("serviceMgr.OnRegiste Server Type=", sInfo.GetType(), " Id=", sInfo.GetId(), " Name=", sInfo.GetName(), " careful => Service=", si)
 							s.Send(pack)
-						}(v3)
+						}(v3, srvInfo)
 					}
 				}
 			}
@@ -167,6 +167,8 @@ func (this *serviceMgr) ReportService(s *netlib.Session) {
 				DecoderName:     proto.String(sc.DecoderName),
 				FilterChain:     sc.FilterChain,
 				HandlerChain:    sc.HandlerChain,
+				Protocol:        proto.String(sc.Protocol),
+				Path:            proto.String(sc.Path),
 			}
 			pack.Services = append(pack.Services, si)
 		}
@@ -230,6 +232,8 @@ func init() {
 					DecoderName:     service.GetDecoderName(),
 					FilterChain:     service.GetFilterChain(),
 					HandlerChain:    service.GetHandlerChain(),
+					Protocol:        service.GetProtocol(),
+					Path:            service.GetPath(),
 				}
 				sc.Init()
 				err := netlib.Connect(sc)

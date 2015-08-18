@@ -2,22 +2,21 @@ package mongo
 
 import (
 	"fmt"
-	"labix.org/v2/mgo"
 
 	"github.com/idealeak/goserver/core"
+	"labix.org/v2/mgo"
 )
 
 var Config = Configuration{
-	Safe: mgo.Safe{ // be conservative...
-		W:     1,
-		FSync: false,
-		J:     true,
-	},
+	Dbs: make(map[string]DbConfig),
 }
 
-var Database *mgo.Database
+var Database = make(map[string]*mgo.Database)
 
 type Configuration struct {
+	Dbs map[string]DbConfig
+}
+type DbConfig struct {
 	Host     string
 	Database string
 	User     string
@@ -30,47 +29,40 @@ func (c *Configuration) Name() string {
 }
 
 func (c *Configuration) Init() error {
-	login := ""
-	if Config.User != "" {
-		login = Config.User + ":" + Config.Password + "@"
+	for name, cf := range Config.Dbs {
+		login := ""
+		if cf.User != "" {
+			login = cf.User + ":" + cf.Password + "@"
+		}
+		host := "localhost"
+		if cf.Host != "" {
+			host = cf.Host
+		}
+
+		// http://goneat.org/pkg/labix.org/v2/mgo/#Session.Mongo
+		// [mongodb://][user:pass@]host1[:port1][,host2[:port2],...][/database][?options]
+		url := fmt.Sprintf("mongodb://%s%s/%s", login, host, cf.Database)
+		fmt.Println(url)
+		session, err := mgo.Dial(url)
+		if err != nil {
+			return err
+		}
+		session.SetSafe(&cf.Safe)
+		Database[name] = session.DB(cf.Database)
 	}
-
-	host := "localhost"
-	if Config.Host != "" {
-		host = Config.Host
-	}
-
-	// http://goneat.org/pkg/labix.org/v2/mgo/#Session.Mongo
-	// [mongodb://][user:pass@]host1[:port1][,host2[:port2],...][/database][?options]
-	url := fmt.Sprintf("mongodb://%s%s/%s", login, host, Config.Database)
-	fmt.Println(url)
-	session, err := mgo.Dial(url)
-	if err != nil {
-		return err
-	}
-	session.SetSafe(&Config.Safe)
-
-	Database = session.DB(Config.Database)
-
 	return nil
 }
 
 func (c *Configuration) Close() error {
-	if Database != nil && Database.Session != nil {
-		Database.Session.Close()
-		Database.Session = nil
-		Database = nil
+	for _, db := range Database {
+		if db != nil && db.Session != nil {
+			db.Session.Close()
+			db.Session = nil
+			db = nil
+		}
 	}
 	return nil
 }
-
-func InitLocalhost(database, user, password string) (err error) {
-	Config.Database = database
-	Config.User = user
-	Config.Password = password
-	return Config.Init()
-}
-
 func init() {
 	core.RegistePackage(&Config)
 }

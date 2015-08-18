@@ -2,8 +2,7 @@
 package netlib
 
 import (
-	"net"
-	"strconv"
+	"io"
 	"time"
 
 	"github.com/idealeak/goserver/core/container"
@@ -11,22 +10,38 @@ import (
 	"github.com/idealeak/goserver/core/utils"
 )
 
-var (
-	SendRoutinePoison interface{} = nil
-)
-
 type SessionCloseListener interface {
-	onClose(s *Session)
+	onClose(s ISession)
+}
+
+type SessionCutPacketListener interface {
+	onCutPacket(w io.Writer) error
+}
+
+type ISession interface {
+	SetAttribute(key, value interface{}) bool
+	RemoveAttribute(key interface{})
+	GetAttribute(key interface{}) interface{}
+	GetSessionConfig() *SessionConfig
+	RemoteAddr() string
+	IsIdle() bool
+	Close()
+	Send(msg interface{}, sync ...bool) bool
+	FireConnectEvent() bool
+	FireDisconnectEvent() bool
+	FirePacketReceived(packetid int, packet interface{}) bool
+	FirePacketSent(data []byte) bool
+	FireSessionIdle() bool
 }
 
 type Session struct {
 	Id          int
 	sendBuffer  chan interface{}
 	recvBuffer  chan *action
-	conn        net.Conn
 	sc          *SessionConfig
 	attributes  *container.SynchronizedMap
 	scl         SessionCloseListener
+	scpl        SessionCutPacketListener
 	createTime  time.Time
 	lastSndTime time.Time
 	lastRcvTime time.Time
@@ -34,22 +49,7 @@ type Session struct {
 	quit        bool
 	shutSend    bool
 	shutRecv    bool
-	IsConned    bool
-}
-
-func newSession(id int, conn net.Conn, sc *SessionConfig, scl SessionCloseListener) *Session {
-	s := &Session{
-		Id:         id,
-		sc:         sc,
-		scl:        scl,
-		conn:       conn,
-		createTime: time.Now(),
-		waitor:     utils.NewWaitor(),
-	}
-
-	s.init()
-
-	return s
+	isConned    bool
 }
 
 func (s *Session) init() {
@@ -75,123 +75,11 @@ func (s *Session) GetSessionConfig() *SessionConfig {
 }
 
 func (s *Session) RemoteAddr() string {
-	return s.conn.RemoteAddr().String()
+	return ""
 }
 
-func (s *Session) start() {
-	s.lastRcvTime = time.Now()
-	go s.recvRoutine()
-	go s.sendRoutine()
-}
-
-func (s *Session) sendRoutine() {
-
-	defer func() {
-		if err := recover(); err != nil {
-			logger.Trace(s.Id, " ->close: Session.procSend err: ", err)
-		}
-		s.sc.encoder.FinishEncode(s)
-		s.shutWrite()
-		s.Close()
-	}()
-
-	s.waitor.Add(1)
-	defer s.waitor.Done()
-
-	var (
-		err  error
-		data []byte
-	)
-
-	for !s.quit || len(s.sendBuffer) != 0 {
-		select {
-		case msg, ok := <-s.sendBuffer:
-			if !ok {
-				panic("[comm expt]sendBuffer chan closed")
-			}
-
-			if msg == nil {
-				panic("[comm expt]normal close send")
-			}
-
-			if s.sc.WriteTimeout != 0 {
-				s.conn.SetWriteDeadline(time.Now().Add(s.sc.WriteTimeout))
-			}
-
-			data, err = s.sc.encoder.Encode(s, msg, s.conn)
-			if err != nil {
-				logger.Trace("s.sc.encoder.Encode err", err)
-				if s.sc.IsInnerLink == false {
-					panic(err)
-				}
-			}
-			s.FirePacketSent(data)
-			s.lastSndTime = time.Now()
-		}
-	}
-}
-
-func (s *Session) recvRoutine() {
-
-	defer func() {
-		if err := recover(); err != nil {
-			logger.Trace(s.Id, " ->close: Session.procRecv err: ", err)
-		}
-		s.sc.decoder.FinishDecode(s)
-		s.shutRead()
-		s.Close()
-	}()
-
-	s.waitor.Add(1)
-	defer s.waitor.Done()
-
-	var (
-		err      error
-		pck      interface{}
-		packetid int
-		raw      []byte
-	)
-
-	for !s.quit {
-		if s.sc.ReadTimeout != 0 {
-			s.conn.SetReadDeadline(time.Now().Add(s.sc.ReadTimeout))
-		}
-
-		packetid, pck, err, raw = s.sc.decoder.Decode(s, s.conn)
-		if err != nil {
-			bUnproc := true
-			bPackErr := false
-			if _, ok := err.(*UnparsePacketTypeErr); ok {
-				bPackErr = true
-				if s.sc.eph != nil && s.sc.eph.OnErrorPacket(s, packetid, raw) {
-					bUnproc = false
-				}
-			}
-			if bUnproc {
-				logger.Trace("s.sc.decoder.Decode err ", err)
-				if s.sc.IsInnerLink == false {
-					panic(err)
-				} else if !bPackErr {
-					panic(err)
-				}
-			}
-		}
-		if pck != nil {
-			if s.FirePacketReceived(packetid, pck) {
-				act := AllocAction()
-				act.s = s
-				act.p = pck
-				act.packid = packetid
-				act.n = "packet:" + strconv.Itoa(packetid)
-				s.recvBuffer <- act
-			}
-		}
-		s.lastRcvTime = time.Now()
-	}
-}
-
-func (s *Session) destroy() {
-	s.FireDisconnectEvent()
+func (s *Session) IsConned() bool {
+	return s.isConned
 }
 
 func (s *Session) IsIdle() bool {
@@ -199,7 +87,6 @@ func (s *Session) IsIdle() bool {
 }
 
 func (s *Session) Close() {
-	//logger.Trace(utils.GetCallStack())
 	if s.quit {
 		return
 	}
@@ -209,31 +96,15 @@ func (s *Session) Close() {
 	go s.reapRoutine()
 }
 
-func (s *Session) reapRoutine() {
-	if !s.shutSend {
-		//close send goroutiue(throw a poison)
-		s.sendBuffer <- SendRoutinePoison
-	}
-
-	if !s.shutRecv {
-		//close recv goroutiue
-		s.shutRead()
-	}
-
-	s.waitor.Wait()
-	s.scl.onClose(s)
-}
-
 func (s *Session) Send(msg interface{}, sync ...bool) bool {
 	if s.quit || s.shutSend {
 		return false
 	}
-
-	if len(sync) > 0 {
+	if len(sync) > 0 && sync[0] {
 		select {
 		case s.sendBuffer <- msg:
 		case <-time.After(time.Duration(s.sc.WriteTimeout)):
-			logger.Info(s.Id, " send buffer full,data be droped")
+			logger.Warn(s.Id, " send buffer full(", len(s.sendBuffer), "),data be droped(asyn), IsInnerLink ", s.sc.IsInnerLink)
 			if s.sc.IsInnerLink == false {
 				s.Close()
 			}
@@ -243,7 +114,7 @@ func (s *Session) Send(msg interface{}, sync ...bool) bool {
 		select {
 		case s.sendBuffer <- msg:
 		default:
-			logger.Info(s.Id, " send buffer full,data be droped")
+			logger.Warn(s.Id, " send buffer full(", len(s.sendBuffer), "),data be droped(sync), IsInnerLink ", s.sc.IsInnerLink)
 			if s.sc.IsInnerLink == false {
 				s.Close()
 			}
@@ -254,40 +125,8 @@ func (s *Session) Send(msg interface{}, sync ...bool) bool {
 	return true
 }
 
-func (s *Session) shutRead() {
-	if s.shutRecv {
-		return
-	}
-
-	s.shutRecv = true
-	if tcpconn, ok := s.conn.(*net.TCPConn); ok {
-		tcpconn.CloseRead()
-	}
-}
-
-func (s *Session) shutWrite() {
-	if s.shutSend {
-		return
-	}
-
-	rest := len(s.sendBuffer)
-	for rest > 0 {
-		<-s.sendBuffer
-		rest--
-	}
-
-	s.shutSend = true
-	if tcpconn, ok := s.conn.(*net.TCPConn); ok {
-		tcpconn.CloseWrite()
-	}
-}
-
-func (s *Session) canShutdown() bool {
-	return s.shutRecv && s.shutSend
-}
-
 func (s *Session) FireConnectEvent() bool {
-	s.IsConned = true
+	s.isConned = true
 	if s.sc.sfc != nil {
 		if !s.sc.sfc.OnSessionOpened(s) {
 			return false
@@ -300,7 +139,7 @@ func (s *Session) FireConnectEvent() bool {
 }
 
 func (s *Session) FireDisconnectEvent() bool {
-	s.IsConned = false
+	s.isConned = false
 	if s.sc.sfc != nil {
 		if !s.sc.sfc.OnSessionClosed(s) {
 			return false
@@ -346,4 +185,23 @@ func (s *Session) FireSessionIdle() bool {
 		s.sc.shc.OnSessionIdle(s)
 	}
 	return true
+}
+
+func (s *Session) reapRoutine() {
+	if !s.shutSend {
+		//close send goroutiue(throw a poison)
+		s.sendBuffer <- SendRoutinePoison
+	}
+	/*
+		if !s.shutRecv {
+			//close recv goroutiue
+			s.shutRead()
+		}
+	*/
+	s.waitor.Wait()
+	s.scl.onClose(s)
+}
+
+func (s *Session) destroy() {
+	s.FireDisconnectEvent()
 }

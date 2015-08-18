@@ -84,6 +84,12 @@ func (dec *DefaultProtocolEncoder) CutAndSendPacket(s *Session, data []byte, w i
 			if err != nil {
 				return
 			}
+			if s.scpl != nil {
+				err = s.scpl.onCutPacket(w)
+				if err != nil {
+					return
+				}
+			}
 		}
 	}
 	return

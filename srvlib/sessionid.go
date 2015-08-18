@@ -26,6 +26,10 @@ func NewSessionId(s *netlib.Session) SessionId {
 	return SessionId(id)
 }
 
+func (id SessionId) IsNil() bool {
+	return int64(id) == int64(0)
+}
+
 func (id SessionId) Get() int64 {
 	return int64(id)
 }

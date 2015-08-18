@@ -5,87 +5,87 @@ import (
 )
 
 var (
-	globalLog ILogger
+	Logger ILogger
 )
 
 func init() {
-	globalLog, _ = seelog.LoggerFromConfigAsFile("logger.xml")
+	Logger, _ = seelog.LoggerFromConfigAsFile("logger.xml")
 }
 
 func Tracef(format string, params ...interface{}) {
-	if globalLog != nil {
-		globalLog.Tracef(format, params...)
+	if Logger != nil {
+		Logger.Tracef(format, params...)
 	}
 }
 
 func Debugf(format string, params ...interface{}) {
-	if globalLog != nil {
-		globalLog.Debugf(format, params...)
+	if Logger != nil {
+		Logger.Debugf(format, params...)
 	}
 }
 
 func Infof(format string, params ...interface{}) {
-	if globalLog != nil {
-		globalLog.Infof(format, params...)
+	if Logger != nil {
+		Logger.Infof(format, params...)
 	}
 }
 
 func Warnf(format string, params ...interface{}) error {
-	if globalLog != nil {
-		return globalLog.Warnf(format, params...)
+	if Logger != nil {
+		return Logger.Warnf(format, params...)
 	}
 	return nil
 }
 
 func Errorf(format string, params ...interface{}) error {
-	if globalLog != nil {
-		return globalLog.Errorf(format, params...)
+	if Logger != nil {
+		return Logger.Errorf(format, params...)
 	}
 	return nil
 }
 
 func Criticalf(format string, params ...interface{}) error {
-	if globalLog != nil {
-		return globalLog.Criticalf(format, params...)
+	if Logger != nil {
+		return Logger.Criticalf(format, params...)
 	}
 	return nil
 }
 
 func Trace(v ...interface{}) {
-	if globalLog != nil {
-		globalLog.Trace(v...)
+	if Logger != nil {
+		Logger.Trace(v...)
 	}
 }
 
 func Debug(v ...interface{}) {
-	if globalLog != nil {
-		globalLog.Debug(v...)
+	if Logger != nil {
+		Logger.Debug(v...)
 	}
 }
 
 func Info(v ...interface{}) {
-	if globalLog != nil {
-		globalLog.Info(v...)
+	if Logger != nil {
+		Logger.Info(v...)
 	}
 }
 
 func Warn(v ...interface{}) error {
-	if globalLog != nil {
-		return globalLog.Warn(v...)
+	if Logger != nil {
+		return Logger.Warn(v...)
 	}
 	return nil
 }
 
 func Error(v ...interface{}) error {
-	if globalLog != nil {
-		return globalLog.Error(v...)
+	if Logger != nil {
+		return Logger.Error(v...)
 	}
 	return nil
 }
 
 func Critical(v ...interface{}) error {
-	if globalLog != nil {
-		return globalLog.Critical(v...)
+	if Logger != nil {
+		return Logger.Critical(v...)
 	}
 	return nil
 }

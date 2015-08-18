@@ -140,7 +140,10 @@ func (this *ModuleMgr) Start() *utils.Waitor {
 	core.LaunchChild(this.Object)
 
 	this.state = ModuleStateInit
-
+	//给模块预留调度的空间，防止主线程直接跑过去
+	select {
+		case <-time.After(time.Second):
+	}
 	return this.Object.Waitor
 }
 
@@ -275,9 +278,17 @@ func UnregisteModule(m Module) {
 }
 
 func Start() *utils.Waitor {
+	err := core.ExecuteHook(core.HOOK_BEFORE_START)
+	if err != nil {
+		logger.Error("ExecuteHook(HOOK_BEFORE_START) error", err)
+	}
 	return AppModule.Start()
 }
 
 func Stop() {
 	AppModule.Close()
+	err := core.ExecuteHook(core.HOOK_AFTER_STOP)
+	if err != nil {
+		logger.Error("ExecuteHook(HOOK_BEFORE_START) error", err)
+	}
 }

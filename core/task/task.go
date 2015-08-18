@@ -6,6 +6,7 @@ import (
 	"github.com/idealeak/goserver/core"
 	"github.com/idealeak/goserver/core/basic"
 	"github.com/idealeak/goserver/core/container/recycler"
+	"github.com/idealeak/goserver/core/logger"
 	"github.com/idealeak/goserver/core/utils"
 )
 
@@ -30,21 +31,27 @@ func (cnw CompleteNotifyWrapper) Done(i interface{}) {
 }
 
 type Task struct {
-	s   *basic.Object
-	c   Callable
-	n   CompleteNotify
-	r   chan interface{}
-	env map[interface{}]interface{}
+	s       *basic.Object
+	c       Callable
+	n       CompleteNotify
+	r       chan interface{}
+	env     map[interface{}]interface{}
+	tCreate time.Time
+	tStart  time.Time
+	name    string
 }
 
-func New(s *basic.Object, c Callable, n CompleteNotify) *Task {
+func New(s *basic.Object, c Callable, n CompleteNotify, name ...string) *Task {
 	t := &Task{
-		s: s,
-		c: c,
-		n: n,
-		r: make(chan interface{}, 1),
+		s:       s,
+		c:       c,
+		n:       n,
+		r:       make(chan interface{}, 1),
+		tCreate: time.Now(),
 	}
-
+	if len(name) != 0 {
+		t.name = name[0]
+	}
 	if s == nil {
 		t.s = core.CoreObject()
 	}
@@ -105,6 +112,7 @@ func (t *Task) PutEnv(k, v interface{}) bool {
 func (t *Task) run() (e error) {
 	defer utils.DumpStackIfPanic("Task::run")
 
+	t.tStart = time.Now()
 	ret := t.c.Call()
 
 	if t.r != nil {
@@ -114,7 +122,10 @@ func (t *Task) run() (e error) {
 	if t.n != nil {
 		SendTaskRes(t.s, t)
 	}
-
+	if t.name != "" {
+		tNow := time.Now()
+		logger.Info("task [", t.name, "] since createTime(", tNow.Sub(t.tCreate), ") since startTime(", tNow.Sub(t.tStart), ")")
+	}
 	return nil
 }
 

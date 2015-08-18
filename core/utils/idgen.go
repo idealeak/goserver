@@ -1,31 +1,32 @@
 // idgen
 package utils
 
+import (
+	"sync/atomic"
+)
+
 type IdGen struct {
-	beg int
-	seq int
+	beg int32
+	seq int32
 }
 
 func (this *IdGen) NextId() int {
-	this.seq++
-	return this.seq
+	seq := atomic.AddInt32(&this.seq, 1)
+	return int(seq)
 }
 
 func (this *IdGen) Reset() {
-	this.seq = this.beg
+	atomic.StoreInt32(&this.seq, this.beg)
 }
 
 func (this *IdGen) SetSeq(seq int) {
-	this.seq = seq
+	atomic.StoreInt32(&this.seq, int32(seq))
 }
 
 func (this *IdGen) SetStartPoint(startPoint int) {
-	this.beg = startPoint
-	if this.seq < this.beg {
-		this.seq = this.beg
-	}
+	atomic.StoreInt32(&this.beg, int32(startPoint))
 }
 
 func (this *IdGen) CurrId() int {
-	return this.seq
+	return int(atomic.LoadInt32(&this.seq))
 }

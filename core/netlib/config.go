@@ -2,9 +2,10 @@
 package netlib
 
 import (
+	"time"
+
 	"github.com/idealeak/goserver/core"
 	"github.com/idealeak/goserver/core/logger"
-	"time"
 )
 
 var Config = Configuration{}
@@ -26,8 +27,10 @@ type SessionConfig struct {
 	Id                     int
 	Type                   int
 	AreaId                 int
+	Protocol               string //"tcp" "ws"
 	Name                   string
 	Ip                     string
+	Path                   string //path of "ws"
 	Port                   int
 	MaxDone                int
 	MaxPend                int

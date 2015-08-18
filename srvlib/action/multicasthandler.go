@@ -37,7 +37,7 @@ func (this *MulticastPacketFactory) CreateMulticastPacket(data interface{}, sis 
 		if err == nil {
 			pack.Data = byteData
 		} else {
-			logger.Warn("MulticastPacketFactory.CreateMulticastPacket err:", err)
+			logger.Info("MulticastPacketFactory.CreateMulticastPacket err:", err)
 		}
 	}
 	proto.SetDefaults(pack)
@@ -51,7 +51,7 @@ func (this *MulticastHandler) Process(s *netlib.Session, data interface{}) error
 		for _, si := range sis {
 			ns := this.getSession(si)
 			if ns != nil {
-				ns.Send(pd, true)
+				ns.Send(pd, s.GetSessionConfig().IsInnerLink)
 			}
 		}
 	}

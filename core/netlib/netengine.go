@@ -2,6 +2,8 @@ package netlib
 
 import (
 	"errors"
+	"time"
+
 	"github.com/idealeak/goserver/core/logger"
 	"github.com/idealeak/goserver/core/module"
 	"github.com/idealeak/goserver/core/profile"
@@ -38,17 +40,25 @@ func (e *NetEngine) newIoService(sc *SessionConfig) ioService {
 		if !sc.AllowMultiConn && ConnectorMgr.isConnecting(sc) {
 			return nil
 		}
-		s = newConnector(e, sc)
+		if sc.Protocol == "ws" {
+			s = newWsConnector(e, sc)
+		} else {
+			s = newTcpConnector(e, sc)
+		}
 	} else {
-		s = newAcceptor(e, sc)
+		if sc.Protocol == "ws" {
+			s = newWsAcceptor(e, sc)
+		} else {
+			s = newTcpAcceptor(e, sc)
+		}
 	}
 	return s
 }
 
-func (e *NetEngine) GetAcceptors() []*Acceptor {
-	acceptors := make([]*Acceptor, 0, len(e.pool))
+func (e *NetEngine) GetAcceptors() []Acceptor {
+	acceptors := make([]Acceptor, 0, len(e.pool))
 	for _, v := range e.pool {
-		if a, is := v.(*Acceptor); is {
+		if a, is := v.(Acceptor); is {
 			acceptors = append(acceptors, a)
 		}
 	}
@@ -74,8 +84,9 @@ func (e *NetEngine) Listen(sc *SessionConfig) error {
 
 func (e *NetEngine) ShutConnector(ip string, port int) {
 	for _, v := range e.pool {
-		if c, is := v.(*Connector); is {
-			if c.sc.Ip == ip && c.sc.Port == port {
+		if c, is := v.(Connector); is {
+			sc := c.GetSessionConfig()
+			if sc.Ip == ip && sc.Port == port {
 				c.shutdown()
 				return
 			}
@@ -102,6 +113,8 @@ func (e *NetEngine) Init() {
 			}
 		}
 	}
+
+	time.AfterFunc(time.Minute*5, func() { e.dump() })
 }
 
 func (e *NetEngine) Update() {
@@ -172,6 +185,12 @@ func (e *NetEngine) destroy() {
 	module.UnregisteModule(e)
 }
 
+func (e *NetEngine) dump() {
+	for _, v := range e.pool {
+		v.dump()
+	}
+	time.AfterFunc(time.Minute*5, func() { e.dump() })
+}
 func init() {
 	module.RegisteModule(NetModule, 0, 0)
 }
@@ -184,7 +203,7 @@ func Listen(sc *SessionConfig) error {
 	return NetModule.Listen(sc)
 }
 
-func GetAcceptors() []*Acceptor {
+func GetAcceptors() []Acceptor {
 	return NetModule.GetAcceptors()
 }
 

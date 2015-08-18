@@ -57,7 +57,7 @@ func (af *AuthenticationFilter) OnPacketReceived(s *netlib.Session, packetid int
 		if auth, ok := packet.(*protocol.SSPacketAuth); ok {
 			h := md5.New()
 			rawText := fmt.Sprintf("%v;%v", auth.GetTimestamp(), s.GetSessionConfig().AuthKey)
-			logger.Infof("AuthenticationFilter rawtext=%v", rawText)
+			logger.Tracef("AuthenticationFilter rawtext=%v IsInnerLink(%v)", rawText, s.GetSessionConfig().IsInnerLink)
 			h.Write([]byte(rawText))
 			expectKey := hex.EncodeToString(h.Sum(nil))
 			if expectKey != auth.GetAuthKey() {
@@ -65,7 +65,7 @@ func (af *AuthenticationFilter) OnPacketReceived(s *netlib.Session, packetid int
 					af.SessionAuthHandler(s, false)
 				}
 				s.Close()
-				logger.Infof("AuthenticationFilter AuthKey error[expect:%v get:%v]", expectKey, auth.GetAuthKey())
+				logger.Tracef("AuthenticationFilter AuthKey error[expect:%v get:%v]", expectKey, auth.GetAuthKey())
 				return false
 			}
 			s.SetAttribute(SessionAttributeAuth, true)
@@ -75,7 +75,7 @@ func (af *AuthenticationFilter) OnPacketReceived(s *netlib.Session, packetid int
 			return false
 		} else {
 			s.Close()
-			logger.Info("AuthenticationFilter packet not expect")
+			logger.Warn("AuthenticationFilter packet not expect")
 			return false
 		}
 	}
