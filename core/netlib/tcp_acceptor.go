@@ -144,7 +144,7 @@ func (a *TcpAcceptor) onClose(s ISession) {
 	a.reaper <- s
 }
 
-func (a *TcpAcceptor) procReap(s *TcpSession) {
+func (a *TcpAcceptor) procReap(s *Session) {
 	if _, exist := a.mapSessions[s.Id]; exist {
 		delete(a.mapSessions, s.Id)
 		s.destroy()
@@ -218,7 +218,7 @@ func (a *TcpAcceptor) procChanEvent() {
 		case s := <-a.acptChan:
 			a.procAccepted(s)
 		case s := <-a.reaper:
-			if tcps, ok := s.(*TcpSession); ok {
+			if tcps, ok := s.(*Session); ok {
 				a.procReap(tcps)
 			}
 		default:

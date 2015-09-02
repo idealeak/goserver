@@ -128,7 +128,7 @@ func (c *WsConnector) procChanEvent() {
 		case conn := <-c.connChan:
 			c.procConnected(conn)
 		case s := <-c.reaper:
-			if wss, ok := s.(*WsSession); ok {
+			if wss, ok := s.(*Session); ok {
 				c.procReap(wss)
 			}
 
@@ -148,7 +148,7 @@ func (c *WsConnector) procConnected(conn *websocket.Conn) {
 	c.s.start()
 }
 
-func (c *WsConnector) procReap(s *WsSession) {
+func (c *WsConnector) procReap(s *Session) {
 	for len(s.recvBuffer) > 0 {
 		data, ok := <-s.recvBuffer
 		if !ok {
@@ -159,10 +159,10 @@ func (c *WsConnector) procReap(s *WsSession) {
 
 	s.destroy()
 
-	if (c.sc.IsAutoReconn == false && c.s == s) || c.quit {
+	if (c.sc.IsAutoReconn == false && c.s.Id == s.Id) || c.quit {
 		c.s = nil
 		go c.reapRoutine()
-	} else if c.sc.IsAutoReconn && c.s == s {
+	} else if c.sc.IsAutoReconn && c.s.Id == s.Id {
 		c.s = nil
 		go c.connectRoutine()
 	}

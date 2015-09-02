@@ -127,7 +127,7 @@ func (c *TcpConnector) procChanEvent() {
 		case conn := <-c.connChan:
 			c.procConnected(conn)
 		case s := <-c.reaper:
-			if tcps, ok := s.(*TcpSession); ok {
+			if tcps, ok := s.(*Session); ok {
 				c.procReap(tcps)
 			}
 
@@ -156,7 +156,7 @@ func (c *TcpConnector) procConnected(conn net.Conn) {
 	c.s.start()
 }
 
-func (c *TcpConnector) procReap(s *TcpSession) {
+func (c *TcpConnector) procReap(s *Session) {
 	for len(s.recvBuffer) > 0 {
 		data, ok := <-s.recvBuffer
 		if !ok {
@@ -167,10 +167,10 @@ func (c *TcpConnector) procReap(s *TcpSession) {
 
 	s.destroy()
 
-	if (c.sc.IsAutoReconn == false && c.s == s) || c.quit {
+	if (c.sc.IsAutoReconn == false && c.s.Id == s.Id) || c.quit {
 		c.s = nil
 		go c.reapRoutine()
-	} else if c.sc.IsAutoReconn && c.s == s {
+	} else if c.sc.IsAutoReconn && c.s.Id == s.Id {
 		c.s = nil
 		go c.connectRoutine()
 	}
