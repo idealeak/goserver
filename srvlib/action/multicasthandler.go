@@ -28,7 +28,7 @@ func (this *MulticastPacketFactory) CreatePacket() interface{} {
 	return pack
 }
 
-func (this *MulticastPacketFactory) CreateMulticastPacket(data interface{}, sis ...*protocol.MCSessionUnion) proto.Message {
+func (this *MulticastPacketFactory) CreateMulticastPacket(data interface{}, sis ...*protocol.MCSessionUnion) (proto.Message, error) {
 	pack := &protocol.SSPacketMulticast{Sessions: sis}
 	if byteData, ok := data.([]byte); ok {
 		pack.Data = byteData
@@ -38,10 +38,11 @@ func (this *MulticastPacketFactory) CreateMulticastPacket(data interface{}, sis 
 			pack.Data = byteData
 		} else {
 			logger.Info("MulticastPacketFactory.CreateMulticastPacket err:", err)
+			return nil, err
 		}
 	}
 	proto.SetDefaults(pack)
-	return pack
+	return pack, nil
 }
 
 func (this *MulticastHandler) Process(s *netlib.Session, data interface{}) error {

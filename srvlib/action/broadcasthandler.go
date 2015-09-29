@@ -28,7 +28,7 @@ func (this *BroadcastPacketFactory) CreatePacket() interface{} {
 	return pack
 }
 
-func (this *BroadcastPacketFactory) CreateBroadcastPacket(sp *protocol.BCSessionUnion, data interface{}) proto.Message {
+func (this *BroadcastPacketFactory) CreateBroadcastPacket(sp *protocol.BCSessionUnion, data interface{}) (proto.Message, error) {
 	pack := &protocol.SSPacketBroadcast{SessParam: sp}
 	if byteData, ok := data.([]byte); ok {
 		pack.Data = byteData
@@ -38,10 +38,11 @@ func (this *BroadcastPacketFactory) CreateBroadcastPacket(sp *protocol.BCSession
 			pack.Data = byteData
 		} else {
 			logger.Warn("BroadcastPacketFactory.CreateBroadcastPacket err:", err)
+			return nil, err
 		}
 	}
 	proto.SetDefaults(pack)
-	return pack
+	return pack, nil
 }
 
 func (this *BroadcastHandler) Process(s *netlib.Session, data interface{}) error {
