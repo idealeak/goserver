@@ -31,16 +31,19 @@ func (af *AuthenticationFilter) GetInterestOps() uint {
 }
 
 func (af *AuthenticationFilter) OnSessionOpened(s *netlib.Session) bool {
-	timestamp := time.Now().Unix()
-	h := md5.New()
-	sc := s.GetSessionConfig()
-	h.Write([]byte(fmt.Sprintf("%v;%v", timestamp, sc.AuthKey)))
-	authPack := &protocol.SSPacketAuth{
-		Timestamp: proto.Int64(timestamp),
-		AuthKey:   proto.String(hex.EncodeToString(h.Sum(nil))),
+	if s.GetSessionConfig().IsClient {
+		timestamp := time.Now().Unix()
+		h := md5.New()
+		sc := s.GetSessionConfig()
+		h.Write([]byte(fmt.Sprintf("%v;%v", timestamp, sc.AuthKey)))
+		authPack := &protocol.SSPacketAuth{
+			Timestamp: proto.Int64(timestamp),
+			AuthKey:   proto.String(hex.EncodeToString(h.Sum(nil))),
+		}
+		proto.SetDefaults(authPack)
+		s.Send(authPack)
 	}
-	proto.SetDefaults(authPack)
-	s.Send(authPack)
+
 	return true
 }
 
@@ -53,30 +56,32 @@ func (af *AuthenticationFilter) OnSessionIdle(s *netlib.Session) bool {
 }
 
 func (af *AuthenticationFilter) OnPacketReceived(s *netlib.Session, packetid int, packet interface{}) bool {
-	if s.GetAttribute(SessionAttributeAuth) == nil {
-		if auth, ok := packet.(*protocol.SSPacketAuth); ok {
-			h := md5.New()
-			rawText := fmt.Sprintf("%v;%v", auth.GetTimestamp(), s.GetSessionConfig().AuthKey)
-			logger.Tracef("AuthenticationFilter rawtext=%v IsInnerLink(%v)", rawText, s.GetSessionConfig().IsInnerLink)
-			h.Write([]byte(rawText))
-			expectKey := hex.EncodeToString(h.Sum(nil))
-			if expectKey != auth.GetAuthKey() {
-				if af.SessionAuthHandler != nil {
-					af.SessionAuthHandler(s, false)
+	if !s.GetSessionConfig().IsClient {
+		if s.GetAttribute(SessionAttributeAuth) == nil {
+			if auth, ok := packet.(*protocol.SSPacketAuth); ok {
+				h := md5.New()
+				rawText := fmt.Sprintf("%v;%v", auth.GetTimestamp(), s.GetSessionConfig().AuthKey)
+				logger.Tracef("AuthenticationFilter rawtext=%v IsInnerLink(%v)", rawText, s.GetSessionConfig().IsInnerLink)
+				h.Write([]byte(rawText))
+				expectKey := hex.EncodeToString(h.Sum(nil))
+				if expectKey != auth.GetAuthKey() {
+					if af.SessionAuthHandler != nil {
+						af.SessionAuthHandler(s, false)
+					}
+					s.Close()
+					logger.Tracef("AuthenticationFilter AuthKey error[expect:%v get:%v]", expectKey, auth.GetAuthKey())
+					return false
 				}
+				s.SetAttribute(SessionAttributeAuth, true)
+				if af.SessionAuthHandler != nil {
+					af.SessionAuthHandler(s, true)
+				}
+				return false
+			} else {
 				s.Close()
-				logger.Tracef("AuthenticationFilter AuthKey error[expect:%v get:%v]", expectKey, auth.GetAuthKey())
+				logger.Warn("AuthenticationFilter packet not expect")
 				return false
 			}
-			s.SetAttribute(SessionAttributeAuth, true)
-			if af.SessionAuthHandler != nil {
-				af.SessionAuthHandler(s, true)
-			}
-			return false
-		} else {
-			s.Close()
-			logger.Warn("AuthenticationFilter packet not expect")
-			return false
 		}
 	}
 	return true

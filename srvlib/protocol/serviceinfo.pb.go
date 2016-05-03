@@ -45,6 +45,7 @@ type ServiceInfo struct {
 	HandlerChain     []string `protobuf:"bytes,29,rep" json:"HandlerChain,omitempty"`
 	Protocol         *string  `protobuf:"bytes,30,opt" json:"Protocol,omitempty"`
 	Path             *string  `protobuf:"bytes,31,opt" json:"Path,omitempty"`
+	OuterIp          *string  `protobuf:"bytes,32,opt" json:"OuterIp,omitempty"`
 	XXX_unrecognized []byte   `json:"-"`
 }
 
@@ -265,6 +266,13 @@ func (m *ServiceInfo) GetProtocol() string {
 func (m *ServiceInfo) GetPath() string {
 	if m != nil && m.Path != nil {
 		return *m.Path
+	}
+	return ""
+}
+
+func (m *ServiceInfo) GetOuterIp() string {
+	if m != nil && m.OuterIp != nil {
+		return *m.OuterIp
 	}
 	return ""
 }

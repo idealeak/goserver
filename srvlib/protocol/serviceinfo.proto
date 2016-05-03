@@ -34,6 +34,7 @@ message ServiceInfo {
 	repeated string HandlerChain = 29;
 	optional string Protocol = 30;
 	optional string Path = 31;
+	optional string OuterIp = 32;
 }
 
 message SSServiceRegiste {

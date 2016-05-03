@@ -172,7 +172,9 @@ func (c *TcpConnector) procReap(s *Session) {
 		go c.reapRoutine()
 	} else if c.sc.IsAutoReconn && c.s.Id == s.Id {
 		c.s = nil
-		go c.connectRoutine()
+		if !c.quit {
+			go c.connectRoutine()
+		}
 	}
 }
 

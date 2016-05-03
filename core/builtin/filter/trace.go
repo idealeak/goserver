@@ -2,7 +2,7 @@
 package filter
 
 import (
-	//"reflect"
+	"reflect"
 	"sync"
 	"time"
 
@@ -34,12 +34,12 @@ func (sft *SessionFilterTrace) GetInterestOps() uint {
 }
 
 func (sft *SessionFilterTrace) OnSessionOpened(s *netlib.Session) bool {
-	//logger.Tracef("SessionFilterTrace.OnSessionOpened sid=%v", s.Id)
+	logger.Tracef("SessionFilterTrace.OnSessionOpened sid=%v", s.Id)
 	return true
 }
 
 func (sft *SessionFilterTrace) OnSessionClosed(s *netlib.Session) bool {
-	//logger.Tracef("SessionFilterTrace.OnSessionClosed sid=%v", s.Id)
+	logger.Tracef("SessionFilterTrace.OnSessionClosed sid=%v", s.Id)
 	return true
 }
 
@@ -49,7 +49,7 @@ func (sft *SessionFilterTrace) OnSessionIdle(s *netlib.Session) bool {
 }
 
 func (sft *SessionFilterTrace) OnPacketReceived(s *netlib.Session, packetid int, packet interface{}) bool {
-	//logger.Tracef("SessionFilterTrace.OnPacketReceived sid=%v packetid=%v packet=%v", s.Id, packetid, reflect.TypeOf(packet))
+	logger.Tracef("SessionFilterTrace.OnPacketReceived sid=%v packetid=%v packet=%v", s.Id, packetid, reflect.TypeOf(packet))
 	sft.Lock()
 	sft.recvCntPerSec++
 	if time.Now().Sub(sft.recvTime) > time.Second {
@@ -65,7 +65,7 @@ func (sft *SessionFilterTrace) OnPacketReceived(s *netlib.Session, packetid int,
 }
 
 func (sft *SessionFilterTrace) OnPacketSent(s *netlib.Session, data []byte) bool {
-	//logger.Tracef("SessionFilterTrace.OnPacketSent sid=%v size=%d", s.Id, len(data))
+	logger.Tracef("SessionFilterTrace.OnPacketSent sid=%v size=%d", s.Id, len(data))
 	sft.Lock()
 	sft.sendCntPerSec++
 	if time.Now().Sub(sft.sendTime) > time.Second {

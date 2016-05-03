@@ -2,6 +2,7 @@ package task
 
 import (
 	"github.com/idealeak/goserver/core/basic"
+	"github.com/idealeak/goserver/core/utils"
 )
 
 type taskResCommand struct {
@@ -10,6 +11,7 @@ type taskResCommand struct {
 
 func (trc *taskResCommand) Done(o *basic.Object) error {
 	defer o.ProcessSeqnum()
+	defer utils.DumpStackIfPanic("taskExeCommand")
 	trc.t.n.Done(<-trc.t.r)
 	return nil
 }

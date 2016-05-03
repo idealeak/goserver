@@ -16,7 +16,7 @@ type connectorMgr struct {
 	lock sync.Mutex
 }
 
-func (cm *connectorMgr) isConnecting(sc *SessionConfig) bool {
+func (cm *connectorMgr) IsConnecting(sc *SessionConfig) bool {
 	strKey := fmt.Sprintf("%v:%v", sc.Ip, sc.Port)
 	cm.lock.Lock()
 	defer cm.lock.Unlock()

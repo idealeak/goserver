@@ -35,7 +35,7 @@ func (this *serviceMgr) RegisteService(s *netlib.Session, services []*protocol.S
 			this.servicesPool[srvtype] = make(map[int32]*protocol.ServiceInfo)
 		}
 		this.servicesPool[srvtype][srvid] = service
-
+		logger.Trace("(this *serviceMgr) RegisteService: ", service.GetSrvName(), " Ip=", service.GetIp(), " Port=", service.GetPort())
 		pack := &protocol.SSServiceInfo{}
 		pack.Service = service
 		proto.SetDefaults(pack)
@@ -56,6 +56,7 @@ func (this *serviceMgr) UnregisteService(service *protocol.ServiceInfo) {
 	srvtype := service.GetSrvType()
 	if v, has := this.servicesPool[srvtype]; has {
 		delete(v, srvid)
+		logger.Trace("(this *serviceMgr) UnregisteService: ",srvid)
 	}
 
 	pack := &protocol.SSServiceShut{}
@@ -169,6 +170,7 @@ func (this *serviceMgr) ReportService(s *netlib.Session) {
 				HandlerChain:    sc.HandlerChain,
 				Protocol:        proto.String(sc.Protocol),
 				Path:            proto.String(sc.Path),
+				OuterIp:         proto.String(sc.OuterIp),
 			}
 			pack.Services = append(pack.Services, si)
 		}
@@ -210,6 +212,7 @@ func init() {
 					AreaId:          int(service.GetAreaId()),
 					Name:            service.GetSrvName(),
 					Ip:              service.GetIp(),
+					OuterIp:         service.GetOuterIp(),
 					Port:            int(service.GetPort()),
 					WriteTimeout:    time.Duration(service.GetWriteTimeOut()),
 					ReadTimeout:     time.Duration(service.GetReadTimeOut()),
@@ -235,6 +238,10 @@ func init() {
 					Protocol:        service.GetProtocol(),
 					Path:            service.GetPath(),
 				}
+				if !sc.AllowMultiConn && netlib.ConnectorMgr.IsConnecting(sc) {
+					logger.Warnf("%v:%v %v:%v had connected, not allow multiple connects", sc.Id, sc.Name, sc.Ip, sc.Port)
+					return nil
+				}
 				sc.Init()
 				err := netlib.Connect(sc)
 				if err != nil {
@@ -259,5 +266,5 @@ func init() {
 		return nil
 	}))
 
-	ServerSessionMgrSington.SetListener(ServiceMgr)
+	ServerSessionMgrSington.AddListener(ServiceMgr)
 }

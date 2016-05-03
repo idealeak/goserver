@@ -348,7 +348,7 @@ func (o *Object) ProcessCommand() {
 			}
 		}
 
-		if tickMode && time.Now().After(o.tLastTick.Add(o.opt.Interval)) {
+		if tickMode && time.Now().After(o.tLastTick.Add(o.opt.Interval-time.Millisecond)) {
 			o.safeTick()
 			o.tLastTick = time.Now()
 			if len(o.que) > o.opt.MaxDone {

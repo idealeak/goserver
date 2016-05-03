@@ -6,6 +6,7 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/idealeak/goserver/core"
+	_ "github.com/idealeak/goserver/core/builtin/filter"
 	"github.com/idealeak/goserver/core/module"
 )
 

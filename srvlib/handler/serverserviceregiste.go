@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/idealeak/goserver/core/logger"
 	"github.com/idealeak/goserver/core/netlib"
 	"github.com/idealeak/goserver/srvlib"
 )
@@ -25,6 +26,7 @@ func (this *SessionHandlerServiceRegiste) GetInterestOps() uint {
 func (this *SessionHandlerServiceRegiste) OnSessionOpened(s *netlib.Session) {
 	sc := s.GetSessionConfig()
 	if sc.IsClient {
+		logger.Trace("SessionHandlerServiceRegiste:OnSessionOpened ReportService->", sc.Name)
 		/*报告自己的监听信息*/
 		srvlib.ServiceMgr.ReportService(s)
 	} else {
@@ -35,6 +37,7 @@ func (this *SessionHandlerServiceRegiste) OnSessionOpened(s *netlib.Session) {
 func (this *SessionHandlerServiceRegiste) OnSessionClosed(s *netlib.Session) {
 	sc := s.GetSessionConfig()
 	if !sc.IsClient {
+		logger.Trace("SessionHandlerServiceRegiste:OnSessionClosed ClearServiceBySession")
 		srvlib.ServiceMgr.ClearServiceBySession(s)
 	}
 }

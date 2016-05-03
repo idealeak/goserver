@@ -249,8 +249,8 @@ func (this *ModuleEntity) safeUpt(nowTime time.Time) {
 	defer utils.DumpStackIfPanic("ModuleEntity.safeTick")
 
 	if nowTime.Sub(this.lastTick) > this.tickInterval {
-		this.module.Update()
 		this.lastTick = nowTime
+		this.module.Update()
 	}
 }
 

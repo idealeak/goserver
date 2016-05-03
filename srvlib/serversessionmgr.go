@@ -17,14 +17,13 @@ type ServerSessionRegisteListener interface {
 }
 
 type ServerSessionMgr struct {
-	sessions map[int]map[int]map[int]*netlib.Session //keys=>areaid:type:id
-	listener ServerSessionRegisteListener
+	sessions  map[int]map[int]map[int]*netlib.Session //keys=>areaid:type:id
+	listeners []ServerSessionRegisteListener
 }
 
-func (ssm *ServerSessionMgr) SetListener(l ServerSessionRegisteListener) ServerSessionRegisteListener {
-	ol := ssm.listener
-	ssm.listener = l
-	return ol
+func (ssm *ServerSessionMgr) AddListener(l ServerSessionRegisteListener) ServerSessionRegisteListener {
+	ssm.listeners = append(ssm.listeners, l)
+	return l
 }
 
 func (ssm *ServerSessionMgr) RegisteSession(s *netlib.Session) bool {
@@ -46,8 +45,10 @@ func (ssm *ServerSessionMgr) RegisteSession(s *netlib.Session) bool {
 			}
 
 			ssm.sessions[areaId][srvType][srvId] = s
-			if ssm.listener != nil {
-				ssm.listener.OnRegiste(s)
+			if len(ssm.listeners) != 0 {
+				for _, l := range ssm.listeners {
+					l.OnRegiste(s)
+				}
 			}
 		}
 	} else {
@@ -67,8 +68,10 @@ func (ssm *ServerSessionMgr) UnregisteSession(s *netlib.Session) bool {
 			if a, exist := ssm.sessions[areaId]; exist {
 				if b, exist := a[srvType]; exist {
 					delete(b, srvId)
-					if ssm.listener != nil {
-						ssm.listener.OnUnregiste(s)
+					if len(ssm.listeners) != 0 {
+						for _, l := range ssm.listeners {
+							l.OnUnregiste(s)
+						}
 					}
 				}
 			}

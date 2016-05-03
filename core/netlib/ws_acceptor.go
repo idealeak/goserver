@@ -85,8 +85,6 @@ func (a *WsAcceptor) start() (err error) {
 			return nil
 		})
 		s := newWsSession(a.idGen.NextId(), ws, a.sc, a)
-		s.FireConnectEvent()
-		s.start()
 		a.acptChan <- s
 	}))
 	go func() {
@@ -151,6 +149,8 @@ func (a *WsAcceptor) reapRoutine() {
 
 func (a *WsAcceptor) procAccepted(s *WsSession) {
 	a.mapSessions[s.Id] = s
+	s.FireConnectEvent()
+	s.start()
 }
 
 func (a *WsAcceptor) procActive() {

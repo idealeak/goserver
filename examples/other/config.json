@@ -20,7 +20,7 @@
 	"Object": {
 		"QueueBacklog": 1024,
 		"MaxDone": 1024,
-		"Interval": 100000000
+		"Interval": 100
 		},
 
 	"Executor": {
@@ -43,7 +43,7 @@
 		"Object": {
 			"QueueBacklog": 1024,
 			"MaxDone": 1024,
-			"Interval": 100000000
+			"Interval": 100
 		}
 	}
     }

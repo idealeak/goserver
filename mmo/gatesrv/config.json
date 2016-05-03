@@ -36,28 +36,6 @@
 				"HandlerChain": ["session-client-registe","handler-client-load"]
 			},
 			{
-				"Id": 401,
-				"Type": 4,
-				"AreaId": 1,
-				"Name": "GateService",
-				"Ip": "127.0.0.1",
-				"Port": 4001,
-				"MaxDone": 20,
-				"MaxPend": 20,
-				"MaxPacket": 65535,
-				"MaxConn": 10000,
-				"RcvBuff": 8192,
-				"SndBuff": 8192,
-				"WriteTimeout": 30,
-				"ReadTimeout": 30,
-				"IsInnerLink": true,
-				"NoDelay": true,
-				"SupportFragment": true,
-				"AuthKey": "1234567890",
-				"FilterChain": ["session-filter-auth","session-filter-keepalive"],
-				"HandlerChain": ["session-srv-registe"]
-			},
-			{
 				"Id": 501,
 				"Type": 5,
 				"AreaId": 1,
@@ -87,7 +65,7 @@
 		"Options": {
 			"QueueBacklog": 1024,
 			"MaxDone": 1024,
-			"Interval": 100000000
+			"Interval": 100
 		}
 	},
 
@@ -111,7 +89,7 @@
 		"Options": {
 			"QueueBacklog": 1024,
 			"MaxDone": 1024,
-			"Interval": 100000000
+			"Interval": 100
 		}
 	},
 						

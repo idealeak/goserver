@@ -31,6 +31,7 @@ type SessionConfig struct {
 	Name                   string
 	Ip                     string
 	Path                   string //path of "ws"
+	OuterIp                string //对外的IP
 	Port                   int
 	MaxDone                int
 	MaxPend                int

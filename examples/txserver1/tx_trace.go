@@ -13,7 +13,7 @@ type traceTransHandler struct {
 
 func init() {
 	transact.RegisteHandler(protocol.TxTrace, &traceTransHandler{})
-	srvlib.ServerSessionMgrSington.SetListener(&MyServerSessionRegisteListener{})
+	srvlib.ServerSessionMgrSington.AddListener(&MyServerSessionRegisteListener{})
 }
 
 func (this *traceTransHandler) OnExcute(tNode *transact.TransNode, ud interface{}) transact.TransExeResult {

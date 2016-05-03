@@ -19,7 +19,7 @@
 		"Options": {
 			"QueueBacklog": 1024,
 			"MaxDone": 1024,
-			"Interval": 100000000
+			"Interval": 100
 		}
 	},
 
@@ -43,7 +43,7 @@
 		"Options": {
 			"QueueBacklog": 1024,
 			"MaxDone": 1024,
-			"Interval": 100000000
+			"Interval": 100
 		}
 	},
 						
@@ -75,7 +75,7 @@
 			"AllowMultiConn": true,
 			"SupportFragment": true,
 			"AuthKey": "1234567890",
-			"FilterChain": ["session-filter-trace","session-filter-auth"]
+			"FilterChain": ["session-filter-trace","session-filter-auth","serversessionfilter"]
 		}
 	}
 }

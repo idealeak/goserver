@@ -37,7 +37,7 @@ func newNetEngine() *NetEngine {
 func (e *NetEngine) newIoService(sc *SessionConfig) ioService {
 	var s ioService
 	if sc.IsClient {
-		if !sc.AllowMultiConn && ConnectorMgr.isConnecting(sc) {
+		if !sc.AllowMultiConn && ConnectorMgr.IsConnecting(sc) {
 			return nil
 		}
 		if sc.Protocol == "ws" {

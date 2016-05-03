@@ -43,6 +43,10 @@ func (csm *ClientSessionMgr) GetSession(srvId int64) *netlib.Session {
 	return nil
 }
 
+func (csm *ClientSessionMgr) GetSessions() map[int64]*netlib.Session {
+	return csm.sessions
+}
+
 func (csm *ClientSessionMgr) Broadcast(pack interface{}) {
 	for _, s := range csm.sessions {
 		s.Send(pack)
