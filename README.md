@@ -11,3 +11,5 @@ goserver 旨在做一个传统的CS结构的服务器框架，支持分布式部
 * 提供了定时器(timer)，任务(task)，分布式事务(transact)，计划工作(schedule)，网络通讯(netlib)，模块管理(module)等基础的内置组件
 * 提供session管理、service注册，查找等分布式相关的基础库(srvlib)
 * 提供一套传统的游戏服务器架构(mmo)
+
+## QQ交流群：159683220
