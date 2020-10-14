@@ -28,10 +28,12 @@ type SessionConfig struct {
 	Id                     int
 	Type                   int
 	AreaId                 int
-	Protocol               string //"tcp" "ws"
+	Protocol               string //"tcp" "ws" "wss"
 	Name                   string
 	Ip                     string
 	Path                   string //path of "ws"
+	CertFile               string
+	KeyFile                string
 	OuterIp                string //对外的IP
 	Port                   int
 	MaxDone                int

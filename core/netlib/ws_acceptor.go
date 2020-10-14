@@ -1,6 +1,7 @@
 package netlib
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net"
 	"net/http"
@@ -68,7 +69,15 @@ func (a *WsAcceptor) init() {
 }
 
 func (a *WsAcceptor) start() (err error) {
-	http.Handle(a.sc.Path, http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+	addr := a.sc.Ip + ":" + strconv.Itoa(int(a.sc.Port))
+
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		logger.Logger.Error(err)
+		return nil
+	}
+
+	h := http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		defer utils.DumpStackIfPanic("ws.HandlerFunc")
 		if req.Method != "GET" {
 			http.Error(res, "method not allowed", 405)
@@ -89,15 +98,29 @@ func (a *WsAcceptor) start() (err error) {
 		})
 		s := newWsSession(a.idGen.NextId(), ws, a.sc, a)
 		a.acptChan <- s
-	}))
-	go func() {
-		service := a.sc.Ip + ":" + strconv.Itoa(int(a.sc.Port))
-		err := http.ListenAndServe(service, nil)
+	})
+
+	if a.sc.Protocol == "wss" {
+		config := &tls.Config{}
+		config.NextProtos = []string{"http/1.1"}
+
+		config.Certificates = make([]tls.Certificate, 1)
+		config.Certificates[0], err = tls.LoadX509KeyPair(a.sc.CertFile, a.sc.KeyFile)
 		if err != nil {
 			logger.Logger.Error(err)
+			return nil
 		}
-	}()
 
+		ln = tls.NewListener(ln, config)
+	}
+
+	httpServer := &http.Server{
+		Addr:           addr,
+		Handler:        h,
+		ReadTimeout:    a.sc.ReadTimeout,
+		WriteTimeout:   a.sc.WriteTimeout,
+	}
+	go httpServer.Serve(ln)
 	return nil
 }
 

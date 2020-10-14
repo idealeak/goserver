@@ -43,7 +43,7 @@ func (e *NetEngine) newIoService(sc *SessionConfig) ioService {
 			return nil
 		}
 		switch sc.Protocol {
-		case "ws":
+		case "ws", "wss":
 			s = newWsConnector(e, sc)
 		case "udp":
 			s = newUdpConnector(e, sc)
@@ -52,7 +52,7 @@ func (e *NetEngine) newIoService(sc *SessionConfig) ioService {
 		}
 	} else {
 		switch sc.Protocol {
-		case "ws":
+		case "ws", "wss":
 			s = newWsAcceptor(e, sc)
 		case "udp":
 			s = newUdpAcceptor(e, sc)
