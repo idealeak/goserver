@@ -1,11 +1,13 @@
 package basic
 
 import (
-	"runtime"
+	"container/list"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"fmt"
+	"github.com/idealeak/goserver/core/container"
 	"github.com/idealeak/goserver/core/logger"
 	"github.com/idealeak/goserver/core/utils"
 )
@@ -25,7 +27,7 @@ var (
 //		asynchronous message queue
 type Object struct {
 	*utils.Waitor
-	sync.Mutex
+	sync.RWMutex
 	//  Identify
 	Id int
 
@@ -39,9 +41,6 @@ type Object struct {
 	//  True if termination was already finished.
 	terminated bool
 
-	//enlarge que flag
-	enlargingQue int32
-
 	//  Sequence number of the last command sent to this object.
 	sentSeqnum uint32
 
@@ -53,14 +52,14 @@ type Object struct {
 
 	//  List of all objects owned by this object. We are responsible
 	//  for deallocating them before we quit.
-	childs map[int]*Object
+	childs *container.SynchronizedMap
 
 	//  Socket owning this object. It's responsible for shutting down
 	//  this object.
 	owner *Object
 
 	//	Command queue
-	que chan Command
+	que *list.List
 
 	//	Configuration Options
 	opt Options
@@ -78,11 +77,15 @@ type Object struct {
 	//
 	sinker Sinker
 	//
-	tLastTick time.Time
-	//
 	timer *time.Ticker
+	//object local storage
+	ols [OLS_MAX_SLOT]interface{}
 	//
-
+	recvCmdCnt int64
+	//
+	sendCmdCnt int64
+	//
+	cond *Cond
 }
 
 func NewObject(id int, name string, opt Options, sinker Sinker) *Object {
@@ -91,23 +94,37 @@ func NewObject(id int, name string, opt Options, sinker Sinker) *Object {
 		Name:        name,
 		opt:         opt,
 		sinker:      sinker,
-		tLastTick:   time.Now(),
 		waitActive:  make(chan struct{}, 1),
 		waitEnlarge: make(chan struct{}, 1),
+		childs:      container.NewSynchronizedMap(),
+		cond:        NewCond(1),
 	}
 
 	o.init()
-	go o.ProcessCommand()
+	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				logger.Logger.Error(o, "panic, o.ProcessCommand error=", err)
+			}
+		}()
+		o.ProcessCommand()
+	}()
 
 	return o
 }
 
-func (o *Object) init() {
-	if o.opt.QueueBacklog < DefaultQueueBacklog {
-		o.que = make(chan Command, DefaultQueueBacklog)
-	} else {
-		o.que = make(chan Command, o.opt.QueueBacklog)
+func (o *Object) GetTreeName() string {
+	name := o.Name
+	parent := o.owner
+	for parent != nil {
+		name = parent.Name + "/" + name
+		parent = parent.owner
 	}
+	return "/" + name
+}
+
+func (o *Object) init() {
+	o.que = list.New()
 }
 
 //	Active inner goroutine
@@ -134,9 +151,11 @@ func (o *Object) LaunchChild(c *Object) {
 	SendOwn(o, c)
 }
 
+//thread safe
 func (o *Object) GetChildById(id int) *Object {
-	if c, exist := o.childs[id]; exist {
-		return c
+	c := o.childs.Get(id)
+	if cc, ok := c.(*Object); ok {
+		return cc
 	}
 	return nil
 }
@@ -162,6 +181,8 @@ func (o *Object) ProcessSeqnum() {
 //  Check whether all the peding term acks were delivered.
 //  If so, deallocate this object.
 func (o *Object) checkTermAcks() {
+	name := o.GetTreeName()
+	logger.Logger.Debugf("(%v) object checkTermAcks terminating=%v processedSeqnum=%v sentSeqnum=%v termAcks=%v ", name, o.terminating, o.processedSeqnum, o.sentSeqnum, o.termAcks)
 	if o.terminating && o.processedSeqnum == o.sentSeqnum && o.termAcks == 0 {
 
 		//  Sanity check. There should be no active children at this point.
@@ -169,6 +190,7 @@ func (o *Object) checkTermAcks() {
 		//  The root object has nobody to confirm the termination to.
 		//  Other nodes will confirm the termination to the owner.
 		if o.owner != nil {
+			logger.Logger.Debugf("(%v)->(%v) Object SendTermAck ", o.Name, o.owner.Name)
 			SendTermAck(o.owner)
 		}
 
@@ -187,6 +209,8 @@ func (o *Object) Terminate(s *Object) {
 		return
 	}
 
+	name := o.GetTreeName()
+	logger.Logger.Debugf("(%v) object Terminate ", name)
 	//  As for the root of the ownership tree, there's noone to terminate it,
 	//  so it has to terminate itself.
 	if o.owner == nil {
@@ -208,10 +232,18 @@ func (o *Object) processTerm() {
 	}
 
 	//  Send termination request to all owned objects.
-	for _, c := range o.childs {
-		SendTerm(c)
+	cnt := 0
+	childs := o.childs.Items()
+	for _, c := range childs {
+		if cc, ok := c.(*Object); ok && cc != nil {
+			SendTerm(cc)
+			cnt++
+		}
 	}
-	o.termAcks += len(o.childs)
+	o.termAcks += cnt
+
+	name := o.GetTreeName()
+	logger.Logger.Debugf("(%v) object processTerm, termAcks=%v", name, o.termAcks)
 
 	o.safeStop()
 	//  Start termination process and check whether by chance we cannot
@@ -223,144 +255,118 @@ func (o *Object) processTerm() {
 //  A place to hook in when phyicallal destruction of the object
 //  is to be delayed.
 func (o *Object) processDestroy() {
+	name := o.GetTreeName()
+	logger.Logger.Debugf("(%v) object processDestroy ", name)
 	o.terminated = true
-	close(o.que)
+	//clear ols
+	o.OlsClrValue()
+}
+
+func (o *Object) GetPendingCommandCnt() int {
+	o.RLock()
+	cnt := o.que.Len()
+	o.RUnlock()
+	return cnt
 }
 
 //	Enqueue command
 func (o *Object) SendCommand(c Command, incseq bool) bool {
-	if !atomic.CompareAndSwapInt32(&o.enlargingQue, 0, 0) {
-		o.Lock()
-		o.Unlock()
-	}
-
 	if incseq {
 		o.incSeqnum()
 	}
 
-	defer func() {
-		if err := recover(); err != nil {
-			//queue maybe enlarging,and be closed
-			o.SendCommand(c, false)
-		}
-	}()
+	o.Lock()
+	o.que.PushBack(c)
+	o.Unlock()
 
-	//If the queue is full, then enlarge it to two times the size of
-redo:
-	select {
-	case o.que <- c:
-	default:
-		//Here the lock competition may be more intense when enlarge the beginning,
-		//may be enlarge goroutine not to snatch the lock, so in this case is very bad, but no way, let him go
-		o.Lock()
-		if len(o.que) < cap(o.que) {
-			o.Unlock()
-			goto redo
-		} else {
-			if atomic.CompareAndSwapInt32(&o.enlargingQue, 0, 1) {
-				defer func() {
-					atomic.StoreInt32(&o.enlargingQue, 0)
-					o.Unlock()
-				}()
-				oldCap := cap(o.que)
-				newCap := oldCap * 2
-				newQue := make(chan Command, newCap)
-				//Here closed out queue is to inform other goroutine, then send later.
-				close(o.que)
-				for cc := range o.que {
-					newQue <- cc
-				}
-				newQue <- c
-				o.que = newQue
-				return true
-			} else {
-				o.Unlock()
-				runtime.Gosched()
-				goto redo
-			}
-		}
-	}
+	atomic.AddInt64(&o.sendCmdCnt, 1)
 
+	//notify
+	o.cond.Signal()
 	return true
 }
 
 //	Dequeue command and process it.
 func (o *Object) ProcessCommand() {
-	var (
-		c        Command
-		ok       bool
-		tickMode bool
-	)
 
 	//wait for active
 	<-o.waitActive
 
 	//deamon or no
 	if o.Waitor != nil {
-		o.Waitor.Add(1)
-		defer o.Waitor.Done()
+		o.Waitor.Add(o.Name, 1)
+		defer o.Waitor.Done(o.Name)
 	}
 
+	var tickMode bool
 	if o.opt.Interval > 0 && o.sinker != nil && o.timer == nil {
 		o.timer = time.NewTicker(o.opt.Interval)
 		defer o.timer.Stop()
 		tickMode = true
-		o.tLastTick = time.Now()
 	}
 
-	//There is a small defect;
-	//when the queue enlarging, there may be a command sequence can not be guaranteed
-	//Because enlarging may occur in other goroutine
+	name := o.GetTreeName()
+	logger.Logger.Debug("(", name, ") object active!!!")
+	doneCnt := 0
 	for !o.terminated {
-		if !atomic.CompareAndSwapInt32(&o.enlargingQue, 0, 0) {
-			//wait enlarge queue
-			runtime.Gosched()
-			continue
+		cnt := o.GetPendingCommandCnt()
+		if cnt == 0 {
+			if tickMode {
+				if o.cond.WaitForTick(o.timer) {
+					//logger.Logger.Debug("(", name, ") object safeTick 1 ", time.Now())
+					o.safeTick()
+					doneCnt = 0
+					continue
+				}
+			} else {
+				o.cond.Wait()
+			}
 		}
+
+		o.Lock()
+		e := o.que.Front()
+		if e != nil {
+			o.que.Remove(e)
+		}
+		o.Unlock()
+
+		if e != nil {
+			if cmd, ok := e.Value.(Command); ok {
+				o.safeDone(cmd)
+				doneCnt++
+			}
+		}
+
 		if tickMode {
 			select {
-			case c, ok = <-o.que:
-				if c != nil {
-					o.safeDone(c)
-				}
-				if !ok {
-					if o.terminated {
-						return
-					} else {
-						continue
-					}
-				}
 			case <-o.timer.C:
+				//logger.Logger.Debug("(", name, ") object safeTick 2 ", time.Now())
+				o.safeTick()
+				doneCnt = 0
+			default:
 			}
-		} else {
-			select {
-			case c, ok = <-o.que:
-				if c != nil {
-					o.safeDone(c)
-				}
-				if !ok {
-					if o.terminated {
-						return
-					} else {
-						continue
-					}
-				}
-			}
-		}
 
-		if tickMode && time.Now().After(o.tLastTick.Add(o.opt.Interval-time.Millisecond)) {
-			o.safeTick()
-			o.tLastTick = time.Now()
-			if len(o.que) > o.opt.MaxDone {
-				logger.Warn("(", o.Name, ") object queue cmd count(", len(o.que), ") maxdone(", o.opt.MaxDone, ")")
+			if doneCnt > o.opt.MaxDone || cnt > o.opt.MaxDone {
+				logger.Logger.Warn("(", name, ") object queue cmd count(", cnt, ") maxdone(", o.opt.MaxDone, ")", " this tick process cnt(", doneCnt, ")")
 			}
 		}
 	}
+
+	cnt := o.GetPendingCommandCnt()
+	logger.Logger.Debug("(", name, ") object ProcessCommand done!!! queue rest cmd count(", cnt, ") ")
 }
 
 func (o *Object) safeDone(cmd Command) {
 	defer utils.DumpStackIfPanic("Object::Command::Done")
+	if StatsWatchMgr != nil {
+		watch := StatsWatchMgr.WatchStart(fmt.Sprintf("/object/%v/cmdone", o.Name), 4)
+		if watch != nil {
+			defer watch.Stop()
+		}
+	}
+
 	err := cmd.Done(o)
+	atomic.AddInt64(&o.recvCmdCnt, 1)
 	if err != nil {
 		panic(err)
 	}
@@ -392,4 +398,32 @@ func (o *Object) safeStop() {
 
 func (o *Object) IsTermiated() bool {
 	return o.terminated
+}
+
+func (o *Object) StatsSelf() (stats CmdStats) {
+	stats.PendingCnt = int64(o.GetPendingCommandCnt())
+	stats.SendCmdCnt = atomic.LoadInt64(&o.sendCmdCnt)
+	stats.RecvCmdCnt = atomic.LoadInt64(&o.recvCmdCnt)
+	return
+}
+
+func (o *Object) GetStats() map[string]CmdStats {
+	if o.childs == nil {
+		return nil
+	}
+	stats := make(map[string]CmdStats)
+	stats[o.GetTreeName()] = o.StatsSelf()
+	childs := o.childs.Items()
+	for _, c := range childs {
+		if cc, ok := c.(*Object); ok && cc != nil {
+			stats[cc.GetTreeName()] = cc.StatsSelf()
+			subStats := cc.GetStats()
+			if subStats != nil && len(subStats) > 0 {
+				for k, v := range subStats {
+					stats[k] = v
+				}
+			}
+		}
+	}
+	return stats
 }

@@ -31,13 +31,8 @@ func RegisterFactory(packetId int, factory PacketFactory) {
 	factories[packetId] = factory
 	tp := factory.CreatePacket()
 	if tp != nil {
-		pid, err := getPacketId(tp)
-		if err != nil {
-			panic(err)
-		}
-
 		pt := typetest(tp)
-		packetQuickMap[reflect.TypeOf(tp)] = packetInfo{ptype: pt, pid: pid}
+		packetQuickMap[reflect.TypeOf(tp)] = packetInfo{ptype: pt, pid: packetId}
 	}
 }
 

@@ -1,7 +1,5 @@
 package protocol;
 
-import "protocol/packetid.proto";
-
 message ServiceInfo {
 	required int32 AreaId = 1;
 	required int32 SrvId = 2;
@@ -38,16 +36,13 @@ message ServiceInfo {
 }
 
 message SSServiceRegiste {
-	required SrvlibPacketID PacketId = 1 [default=PACKET_SS_SERVICE_REGISTE];
-	repeated ServiceInfo Services = 2;
+	repeated ServiceInfo Services = 1;
 }
 
 message SSServiceInfo {
-	required SrvlibPacketID PacketId = 1 [default=PACKET_SS_SERVICE_INFO];
-	required ServiceInfo Service = 2;
+	required ServiceInfo Service = 1;
 }
 
 message SSServiceShut {
-	required SrvlibPacketID PacketId = 1 [default=PACKET_SS_SERVICE_SHUT];
-	required ServiceInfo Service = 2;
+	required ServiceInfo Service = 1;
 }

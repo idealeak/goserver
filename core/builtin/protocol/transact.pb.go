@@ -14,25 +14,15 @@ var _ = &json.SyntaxError{}
 var _ = math.Inf
 
 type TransactStart struct {
-	PacketId         *CoreBuiltinPacketID `protobuf:"varint,1,req,enum=protocol.CoreBuiltinPacketID,def=-1000" json:"PacketId,omitempty"`
-	MyTNP            *TransactParam       `protobuf:"bytes,2,req" json:"MyTNP,omitempty"`
-	ParenTNP         *TransactParam       `protobuf:"bytes,3,req" json:"ParenTNP,omitempty"`
-	CustomData       []byte               `protobuf:"bytes,4,opt" json:"CustomData,omitempty"`
-	XXX_unrecognized []byte               `json:"-"`
+	MyTNP            *TransactParam `protobuf:"bytes,1,req" json:"MyTNP,omitempty"`
+	ParenTNP         *TransactParam `protobuf:"bytes,2,req" json:"ParenTNP,omitempty"`
+	CustomData       []byte         `protobuf:"bytes,3,opt" json:"CustomData,omitempty"`
+	XXX_unrecognized []byte         `json:"-"`
 }
 
 func (m *TransactStart) Reset()         { *m = TransactStart{} }
 func (m *TransactStart) String() string { return proto.CompactTextString(m) }
 func (*TransactStart) ProtoMessage()    {}
-
-const Default_TransactStart_PacketId CoreBuiltinPacketID = CoreBuiltinPacketID_PACKET_SS_TX_START
-
-func (m *TransactStart) GetPacketId() CoreBuiltinPacketID {
-	if m != nil && m.PacketId != nil {
-		return *m.PacketId
-	}
-	return Default_TransactStart_PacketId
-}
 
 func (m *TransactStart) GetMyTNP() *TransactParam {
 	if m != nil {
@@ -56,24 +46,14 @@ func (m *TransactStart) GetCustomData() []byte {
 }
 
 type TransactCtrlCmd struct {
-	PacketId         *CoreBuiltinPacketID `protobuf:"varint,1,req,enum=protocol.CoreBuiltinPacketID,def=-1001" json:"PacketId,omitempty"`
-	TId              *int64               `protobuf:"varint,2,req" json:"TId,omitempty"`
-	Cmd              *int32               `protobuf:"varint,3,req" json:"Cmd,omitempty"`
-	XXX_unrecognized []byte               `json:"-"`
+	TId              *int64 `protobuf:"varint,1,req" json:"TId,omitempty"`
+	Cmd              *int32 `protobuf:"varint,2,req" json:"Cmd,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
 }
 
 func (m *TransactCtrlCmd) Reset()         { *m = TransactCtrlCmd{} }
 func (m *TransactCtrlCmd) String() string { return proto.CompactTextString(m) }
 func (*TransactCtrlCmd) ProtoMessage()    {}
-
-const Default_TransactCtrlCmd_PacketId CoreBuiltinPacketID = CoreBuiltinPacketID_PACKET_SS_TX_CMD
-
-func (m *TransactCtrlCmd) GetPacketId() CoreBuiltinPacketID {
-	if m != nil && m.PacketId != nil {
-		return *m.PacketId
-	}
-	return Default_TransactCtrlCmd_PacketId
-}
 
 func (m *TransactCtrlCmd) GetTId() int64 {
 	if m != nil && m.TId != nil {
@@ -90,26 +70,16 @@ func (m *TransactCtrlCmd) GetCmd() int32 {
 }
 
 type TransactResult struct {
-	PacketId         *CoreBuiltinPacketID `protobuf:"varint,1,req,enum=protocol.CoreBuiltinPacketID,def=-1002" json:"PacketId,omitempty"`
-	MyTId            *int64               `protobuf:"varint,2,req" json:"MyTId,omitempty"`
-	ChildTId         *int64               `protobuf:"varint,3,req" json:"ChildTId,omitempty"`
-	RetCode          *int32               `protobuf:"varint,4,req" json:"RetCode,omitempty"`
-	CustomData       []byte               `protobuf:"bytes,5,opt" json:"CustomData,omitempty"`
-	XXX_unrecognized []byte               `json:"-"`
+	MyTId            *int64 `protobuf:"varint,1,req" json:"MyTId,omitempty"`
+	ChildTId         *int64 `protobuf:"varint,2,req" json:"ChildTId,omitempty"`
+	RetCode          *int32 `protobuf:"varint,3,req" json:"RetCode,omitempty"`
+	CustomData       []byte `protobuf:"bytes,4,opt" json:"CustomData,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
 }
 
 func (m *TransactResult) Reset()         { *m = TransactResult{} }
 func (m *TransactResult) String() string { return proto.CompactTextString(m) }
 func (*TransactResult) ProtoMessage()    {}
-
-const Default_TransactResult_PacketId CoreBuiltinPacketID = CoreBuiltinPacketID_PACKET_SS_TX_RESULT
-
-func (m *TransactResult) GetPacketId() CoreBuiltinPacketID {
-	if m != nil && m.PacketId != nil {
-		return *m.PacketId
-	}
-	return Default_TransactResult_PacketId
-}
 
 func (m *TransactResult) GetMyTId() int64 {
 	if m != nil && m.MyTId != nil {

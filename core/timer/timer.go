@@ -29,8 +29,8 @@ func NewTimerMgr() *TimerMgr {
 }
 
 func (tm *TimerMgr) Start() {
-	logger.Trace("Timer Start")
-	defer logger.Trace("Timer Start [ok]")
+	logger.Logger.Trace("Timer Start")
+	defer logger.Logger.Trace("Timer Start [ok]")
 
 	tm.Object = basic.NewObject(core.ObjId_TimerId,
 		"timer",
@@ -51,7 +51,7 @@ func (tm *TimerMgr) OnTick() {
 		if tm.tq.Len() > 0 {
 			t := heap.Pop(tm.tq)
 			if te, ok := t.(*TimerEntity); ok {
-				if te.next.Before(nowTime) {
+				if !te.stoped && te.next.Before(nowTime) {
 					if te.times > 0 {
 						te.times--
 					}
@@ -66,7 +66,9 @@ func (tm *TimerMgr) OnTick() {
 						}
 					}
 				} else {
-					heap.Push(tm.tq, te)
+					if !te.stoped {
+						heap.Push(tm.tq, te)
+					}
 					return
 				}
 			}

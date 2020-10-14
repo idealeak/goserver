@@ -7,33 +7,33 @@ import (
 
 type TransCtx struct {
 	fields map[interface{}]interface{}
-	mutex  *sync.Mutex
+	lock   *sync.RWMutex
 }
 
 func NewTransCtx() *TransCtx {
 	tc := &TransCtx{
-		mutex: new(sync.Mutex),
+		lock: new(sync.RWMutex),
 	}
 	return tc
 }
 
 func (this *TransCtx) SetField(k, v interface{}) {
-	this.mutex.Lock()
-	defer this.mutex.Unlock()
+	this.lock.Lock()
 	if this.fields == nil {
 		this.fields = make(map[interface{}]interface{})
 	}
 	this.fields[k] = v
+	this.lock.Unlock()
 }
 
 func (this *TransCtx) GetField(k interface{}) interface{} {
-	this.mutex.Lock()
-	defer this.mutex.Unlock()
+	this.lock.RLock()
 	if this.fields != nil {
 		if v, exist := this.fields[k]; exist {
+			this.lock.RUnlock()
 			return v
 		}
 	}
-
+	this.lock.RUnlock()
 	return nil
 }

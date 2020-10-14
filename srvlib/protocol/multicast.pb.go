@@ -14,8 +14,8 @@ var _ = &json.SyntaxError{}
 var _ = math.Inf
 
 type SSPacketMulticast struct {
-	PacketId         *SrvlibPacketID   `protobuf:"varint,1,req,enum=protocol.SrvlibPacketID,def=-2001" json:"PacketId,omitempty"`
-	Sessions         []*MCSessionUnion `protobuf:"bytes,2,rep" json:"Sessions,omitempty"`
+	Sessions         []*MCSessionUnion `protobuf:"bytes,1,rep" json:"Sessions,omitempty"`
+	PacketId         *int32            `protobuf:"varint,2,req" json:"PacketId,omitempty"`
 	Data             []byte            `protobuf:"bytes,3,req" json:"Data,omitempty"`
 	XXX_unrecognized []byte            `json:"-"`
 }
@@ -24,20 +24,18 @@ func (m *SSPacketMulticast) Reset()         { *m = SSPacketMulticast{} }
 func (m *SSPacketMulticast) String() string { return proto.CompactTextString(m) }
 func (*SSPacketMulticast) ProtoMessage()    {}
 
-const Default_SSPacketMulticast_PacketId SrvlibPacketID = SrvlibPacketID_PACKET_SS_MULTICAST
-
-func (m *SSPacketMulticast) GetPacketId() SrvlibPacketID {
-	if m != nil && m.PacketId != nil {
-		return *m.PacketId
-	}
-	return Default_SSPacketMulticast_PacketId
-}
-
 func (m *SSPacketMulticast) GetSessions() []*MCSessionUnion {
 	if m != nil {
 		return m.Sessions
 	}
 	return nil
+}
+
+func (m *SSPacketMulticast) GetPacketId() int32 {
+	if m != nil && m.PacketId != nil {
+		return *m.PacketId
+	}
+	return 0
 }
 
 func (m *SSPacketMulticast) GetData() []byte {

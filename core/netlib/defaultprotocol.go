@@ -3,17 +3,19 @@ package netlib
 
 import (
 	"encoding/binary"
+	"fmt"
 )
 
 var (
 	LenOfPacketHeader int
 	LenOfProtoHeader  int
-	MaxPacketSize     int = 1024
+	MaxPacketSize     int = 64 * 1024
 )
 
 type ProtoHeader struct {
-	Len uint16
-	Seq uint16
+	Len     uint16 //包长度
+	Seq     uint16 //包序号
+	LogicNo uint32 //逻辑号
 }
 
 type PacketHeader struct {
@@ -34,4 +36,5 @@ func (rwb *RWBuffer) Init() {
 func init() {
 	LenOfPacketHeader = binary.Size(&PacketHeader{})
 	LenOfProtoHeader = binary.Size(&ProtoHeader{})
+	fmt.Println("sizeof(PacketHeader)=", LenOfPacketHeader, " sizeof(ProtoHeader)=", LenOfProtoHeader)
 }

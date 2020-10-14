@@ -32,10 +32,10 @@ func (sfl *SessionHandlerClientRegiste) OnSessionClosed(s *netlib.Session) {
 func (sfl *SessionHandlerClientRegiste) OnSessionIdle(s *netlib.Session) {
 }
 
-func (sfl *SessionHandlerClientRegiste) OnPacketReceived(s *netlib.Session, packetid int, packet interface{}) {
+func (sfl *SessionHandlerClientRegiste) OnPacketReceived(s *netlib.Session, packetid int, logicNo uint32, packet interface{}) {
 }
 
-func (sfl *SessionHandlerClientRegiste) OnPacketSent(s *netlib.Session, data []byte) {
+func (sfl *SessionHandlerClientRegiste) OnPacketSent(s *netlib.Session, packetid int, logicNo uint32, data []byte) {
 }
 
 func init() {

@@ -19,14 +19,14 @@ func (this *SCPacketPongPacketFactory) CreatePacket() interface{} {
 	return pack
 }
 
-func (this *SCPacketPongHandler) Process(session *netlib.Session, data interface{}) error {
+func (this *SCPacketPongHandler) Process(session *netlib.Session, packetid int, data interface{}) error {
 	if pong, ok := data.(*protocol.SCPacketPong); ok {
 		ping := &protocol.CSPacketPing{
 			TimeStamb: proto.Int64(time.Now().Unix()),
 			Message:   pong.GetMessage(),
 		}
 		proto.SetDefaults(ping)
-		session.Send(ping)
+		session.Send(int(protocol.PacketID_PACKET_CS_PING), ping)
 	}
 	return nil
 }

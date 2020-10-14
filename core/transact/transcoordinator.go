@@ -86,16 +86,16 @@ func (this *transactCoordinater) spawnTransNodeID() TransNodeID {
 
 func (this *transactCoordinater) createTransNode(tnp *TransNodeParam, ud interface{}, timeout time.Duration) *TransNode {
 	if this == nil || tnp == nil {
-		logger.Warn("transactCoordinater.createTransNode failed, Null Pointer")
+		logger.Logger.Warn("transactCoordinater.createTransNode failed, Null Pointer")
 		return nil
 	}
 	if this.quit {
-		logger.Warn("transactCoordinater.createTransNode failed, module shutdowning")
+		logger.Logger.Warn("transactCoordinater.createTransNode failed, module shutdowning")
 		return nil
 	}
 	transHandler := GetHandler(tnp.Tt)
 	if transHandler == nil {
-		logger.Warn("transactCoordinater.createTransNode failed, TransNodeParam=%v", *tnp)
+		logger.Logger.Warnf("transactCoordinater.createTransNode failed, TransNodeParam=%v", *tnp)
 		return nil
 	}
 
@@ -107,19 +107,20 @@ func (this *transactCoordinater) createTransNode(tnp *TransNodeParam, ud interfa
 		tnp.SkeletonID = Config.tcs.GetSkeletonID()
 		tnp.AreaID = Config.tcs.GetAreaID()
 	}
-	tnp.TimeOut = timeout
+	tnp.TimeOut = timeout * 3 / 2
 	tnode := &TransNode{
-		MyTnp:    tnp,
-		handler:  transHandler,
-		owner:    this,
-		TransRep: &TransResult{},
-		TransEnv: NewTransCtx(),
-		ud:       ud,
+		MyTnp:      tnp,
+		handler:    transHandler,
+		owner:      this,
+		TransRep:   &TransResult{},
+		TransEnv:   NewTransCtx(),
+		ud:         ud,
+		createTime: time.Now(),
 	}
 
 	this.addTransNode(tnode)
 
-	if h, ok := timer.StartTimer(tta, tnode, timeout, 1); ok {
+	if h, ok := timer.StartTimer(tta, tnode, tnp.TimeOut, 1); ok {
 		tnode.timeHandle = h
 	} else {
 		return nil
@@ -152,7 +153,7 @@ func (this *transactCoordinater) ProcessTransResult(tid, childtid TransNodeID, r
 
 func (this *transactCoordinater) ProcessTransStart(parentTnp, myTnp *TransNodeParam, ud interface{}, timeout time.Duration) bool {
 	if this.quit {
-		logger.Warn("transactCoordinater.processTransStart find shutdowning, parent=", parentTnp, " selfparam=", myTnp)
+		logger.Logger.Warn("transactCoordinater.processTransStart find shutdowning, parent=", parentTnp, " selfparam=", myTnp)
 		return false
 	}
 	tnode := this.createTransNode(myTnp, ud, timeout)

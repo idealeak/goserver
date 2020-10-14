@@ -7,13 +7,13 @@ var (
 type ErrorPacketHandlerCreator func() ErrorPacketHandler
 
 type ErrorPacketHandler interface {
-	OnErrorPacket(s *Session, packetid int, data []byte) bool //run in session receive goroutine
+	OnErrorPacket(s *Session, packetid int, logicNo uint32, data []byte) bool //run in session receive goroutine
 }
 
-type ErrorPacketHandlerWrapper func(session *Session, packetid int, data []byte) bool
+type ErrorPacketHandlerWrapper func(session *Session, packetid int, logicNo uint32, data []byte) bool
 
-func (hw ErrorPacketHandlerWrapper) OnErrorPacket(session *Session, packetid int, data []byte) bool {
-	return hw(session, packetid, data)
+func (hw ErrorPacketHandlerWrapper) OnErrorPacket(session *Session, packetid int, logicNo uint32, data []byte) bool {
+	return hw(session, packetid, logicNo, data)
 }
 
 func RegisteErrorPacketHandlerCreator(name string, ephc ErrorPacketHandlerCreator) {

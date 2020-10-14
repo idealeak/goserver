@@ -14,26 +14,17 @@ var _ = &json.SyntaxError{}
 var _ = math.Inf
 
 type SSSrvRegiste struct {
-	PacketId         *SrvlibPacketID `protobuf:"varint,1,req,enum=protocol.SrvlibPacketID,def=-2000" json:"PacketId,omitempty"`
-	Id               *int32          `protobuf:"varint,2,req" json:"Id,omitempty"`
-	Type             *int32          `protobuf:"varint,3,req" json:"Type,omitempty"`
-	AreaId           *int32          `protobuf:"varint,4,req" json:"AreaId,omitempty"`
-	Name             *string         `protobuf:"bytes,5,req" json:"Name,omitempty"`
-	XXX_unrecognized []byte          `json:"-"`
+	Id               *int32  `protobuf:"varint,1,req" json:"Id,omitempty"`
+	Type             *int32  `protobuf:"varint,2,req" json:"Type,omitempty"`
+	AreaId           *int32  `protobuf:"varint,3,req" json:"AreaId,omitempty"`
+	Name             *string `protobuf:"bytes,4,req" json:"Name,omitempty"`
+	Data             *string `protobuf:"bytes,5,opt" json:"Data,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
 }
 
 func (m *SSSrvRegiste) Reset()         { *m = SSSrvRegiste{} }
 func (m *SSSrvRegiste) String() string { return proto.CompactTextString(m) }
 func (*SSSrvRegiste) ProtoMessage()    {}
-
-const Default_SSSrvRegiste_PacketId SrvlibPacketID = SrvlibPacketID_PACKET_SS_REGISTE
-
-func (m *SSSrvRegiste) GetPacketId() SrvlibPacketID {
-	if m != nil && m.PacketId != nil {
-		return *m.PacketId
-	}
-	return Default_SSSrvRegiste_PacketId
-}
 
 func (m *SSSrvRegiste) GetId() int32 {
 	if m != nil && m.Id != nil {
@@ -59,6 +50,13 @@ func (m *SSSrvRegiste) GetAreaId() int32 {
 func (m *SSSrvRegiste) GetName() string {
 	if m != nil && m.Name != nil {
 		return *m.Name
+	}
+	return ""
+}
+
+func (m *SSSrvRegiste) GetData() string {
+	if m != nil && m.Data != nil {
+		return *m.Data
 	}
 	return ""
 }

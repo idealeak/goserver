@@ -2,8 +2,8 @@
 package recycler
 
 import (
+	"runtime"
 	"testing"
-	"time"
 )
 
 func makeBuffer() interface{} {
@@ -11,30 +11,20 @@ func makeBuffer() interface{} {
 	return buf
 }
 
-var MyRecycler = NewRecycler(RecyclerBacklogDefault, makeBuffer)
+var MyRecycler = NewRecycler(RecyclerBacklogDefault, makeBuffer, "test")
 
 func TestGet(t *testing.T) {
-	if len(MyRecycler.get) != RecyclerBacklogDefault {
-		t.Fatal("Recycler get size error")
-	}
-	if MyRecycler.que.Len() != 1 {
-		t.Fatal("Recycler inner que error")
-	}
 	MyRecycler.Get()
 }
 
 func TestGive(t *testing.T) {
 	MyRecycler.Give(nil)
-
-	time.Sleep(time.Second)
-
-	if MyRecycler.que.Len() != 2 {
-		t.Fatal("Recycler inner que size error")
-	}
 }
 
 func BenchmarkGet(b *testing.B) {
+	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		MyRecycler.Get()
 	}
+	b.StopTimer()
 }

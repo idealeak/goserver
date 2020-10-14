@@ -19,6 +19,13 @@ func init() {
 	pid = os.Getpid()
 }
 
+type RuntimeStats struct {
+	CountGoroutine int
+	CountHeap      int
+	CountThread    int
+	CountBlock     int
+}
+
 func ProcessInput(input string, w io.Writer) {
 	switch input {
 	case "lookup goroutine":
@@ -104,4 +111,13 @@ func printGC(memStats *runtime.MemStats, gcstats *debug.GCStats, w io.Writer) {
 			ToH(memStats.Sys),
 			ToH(uint64(allocatedRate)))
 	}
+}
+
+func StatsRuntime() RuntimeStats {
+	stats := RuntimeStats{}
+	stats.CountGoroutine = runtime.NumGoroutine()
+	stats.CountThread, _ = runtime.ThreadCreateProfile(nil)
+	stats.CountHeap, _ = runtime.MemProfile(nil, true)
+	stats.CountBlock, _ = runtime.BlockProfile(nil)
+	return stats
 }

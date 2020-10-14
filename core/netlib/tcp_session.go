@@ -2,7 +2,9 @@
 package netlib
 
 import (
+	"fmt"
 	"net"
+	"runtime"
 	"strconv"
 	"time"
 
@@ -11,7 +13,7 @@ import (
 )
 
 var (
-	SendRoutinePoison interface{} = nil
+	SendRoutinePoison *packet = nil
 )
 
 type TcpSession struct {
@@ -27,7 +29,8 @@ func newTcpSession(id int, conn net.Conn, sc *SessionConfig, scl SessionCloseLis
 	s.Session.sc = sc
 	s.Session.scl = scl
 	s.Session.createTime = time.Now()
-	s.Session.waitor = utils.NewWaitor()
+	s.Session.waitor = utils.NewWaitor("netlib.TcpSession")
+	s.Session.impl = s
 	s.init()
 
 	return s
@@ -35,6 +38,10 @@ func newTcpSession(id int, conn net.Conn, sc *SessionConfig, scl SessionCloseLis
 
 func (s *TcpSession) init() {
 	s.Session.init()
+}
+
+func (s *TcpSession) LocalAddr() string {
+	return s.conn.LocalAddr().String()
 }
 
 func (s *TcpSession) RemoteAddr() string {
@@ -48,19 +55,22 @@ func (s *TcpSession) start() {
 }
 
 func (s *TcpSession) sendRoutine() {
-
+	name := fmt.Sprintf("TcpSession.sendRoutine(%v_%v)", s.sc.Name, s.Id)
+	s.waitor.Add(name, 1)
 	defer func() {
 		if err := recover(); err != nil {
-			logger.Trace(s.Id, " ->close: Session.procSend err: ", err)
+			if !s.sc.IsClient && s.sc.IsInnerLink {
+				logger.Logger.Warn(s.Id, " ->close: TcpSession.sendRoutine err: ", err)
+			} else {
+				logger.Logger.Trace(s.Id, " ->close: TcpSession.sendRoutine err: ", err)
+			}
 		}
 		s.sc.encoder.FinishEncode(&s.Session)
 		s.shutWrite()
 		s.shutRead()
 		s.Close()
+		s.waitor.Done(name)
 	}()
-
-	s.waitor.Add(1)
-	defer s.waitor.Done()
 
 	var (
 		err  error
@@ -68,13 +78,17 @@ func (s *TcpSession) sendRoutine() {
 	)
 
 	for !s.quit || len(s.sendBuffer) != 0 {
+		if s.PendingSnd {
+			runtime.Gosched()
+			continue
+		}
 		select {
-		case msg, ok := <-s.sendBuffer:
+		case packet, ok := <-s.sendBuffer:
 			if !ok {
 				panic("[comm expt]sendBuffer chan closed")
 			}
 
-			if msg == nil {
+			if packet == nil {
 				panic("[comm expt]normal close send")
 			}
 
@@ -87,41 +101,51 @@ func (s *TcpSession) sendRoutine() {
 				}
 			}
 
-			data, err = s.sc.encoder.Encode(&s.Session, msg, s.conn)
+			data, err = s.sc.encoder.Encode(&s.Session, packet.packetid, packet.logicno, packet.data, s.conn)
 			if err != nil {
-				logger.Trace("s.sc.encoder.Encode err", err)
+				logger.Logger.Trace("s.sc.encoder.Encode err", err)
 				if s.sc.IsInnerLink == false {
+					FreePacket(packet)
 					panic(err)
 				}
 			}
-			s.FirePacketSent(data)
+			FreePacket(packet)
+			s.FirePacketSent(packet.packetid, packet.logicno, data)
 			s.lastSndTime = time.Now()
 		}
 	}
 }
 
 func (s *TcpSession) recvRoutine() {
-
+	name := fmt.Sprintf("TcpSession.recvRoutine(%v_%v)", s.sc.Name, s.Id)
+	s.waitor.Add(name, 1)
 	defer func() {
 		if err := recover(); err != nil {
-			logger.Trace(s.Id, " ->close: Session.procRecv err: ", err)
+			if !s.sc.IsClient && s.sc.IsInnerLink {
+				logger.Logger.Warn(s.Id, " ->close: TcpSession.recvRoutine err: ", err)
+			} else {
+				logger.Logger.Trace(s.Id, " ->close: TcpSession.recvRoutine err: ", err)
+			}
 		}
 		s.sc.decoder.FinishDecode(&s.Session)
 		s.shutRead()
 		s.Close()
+		s.waitor.Done(name)
 	}()
-
-	s.waitor.Add(1)
-	defer s.waitor.Done()
 
 	var (
 		err      error
 		pck      interface{}
 		packetid int
+		logicNo  uint32
 		raw      []byte
 	)
 
-	for /*!s.quit */ true {
+	for {
+		if s.PendingRcv {
+			runtime.Gosched()
+			continue
+		}
 		if s.sc.IsInnerLink {
 			var timeZero time.Time
 			s.conn.SetReadDeadline(timeZero)
@@ -131,18 +155,18 @@ func (s *TcpSession) recvRoutine() {
 			}
 		}
 
-		packetid, pck, err, raw = s.sc.decoder.Decode(&s.Session, s.conn)
+		packetid, logicNo, pck, err, raw = s.sc.decoder.Decode(&s.Session, s.conn)
 		if err != nil {
 			bUnproc := true
 			bPackErr := false
 			if _, ok := err.(*UnparsePacketTypeErr); ok {
 				bPackErr = true
-				if s.sc.eph != nil && s.sc.eph.OnErrorPacket(&s.Session, packetid, raw) {
+				if s.sc.eph != nil && s.sc.eph.OnErrorPacket(&s.Session, packetid, logicNo, raw) {
 					bUnproc = false
 				}
 			}
 			if bUnproc {
-				logger.Trace("s.sc.decoder.Decode err ", err)
+				logger.Logger.Tracef("s.sc.decoder.Decode(packetid:%v) err:%v ", packetid, err)
 				if s.sc.IsInnerLink == false {
 					panic(err)
 				} else if !bPackErr {
@@ -151,11 +175,12 @@ func (s *TcpSession) recvRoutine() {
 			}
 		}
 		if pck != nil {
-			if s.FirePacketReceived(packetid, pck) {
+			if s.FirePacketReceived(packetid, logicNo, pck) {
 				act := AllocAction()
 				act.s = &s.Session
 				act.p = pck
 				act.packid = packetid
+				act.logicNo = logicNo
 				act.n = "packet:" + strconv.Itoa(packetid)
 				s.recvBuffer <- act
 			}
@@ -168,7 +193,7 @@ func (s *TcpSession) shutRead() {
 	if s.shutRecv {
 		return
 	}
-	logger.Trace(s.Id, " shutRead")
+	logger.Logger.Trace(s.Id, " shutRead")
 	s.shutRecv = true
 	if tcpconn, ok := s.conn.(*net.TCPConn); ok {
 		tcpconn.CloseRead()
@@ -179,10 +204,13 @@ func (s *TcpSession) shutWrite() {
 	if s.shutSend {
 		return
 	}
-	logger.Trace(s.Id, " shutWrite")
+	logger.Logger.Trace(s.Id, " shutWrite")
 	rest := len(s.sendBuffer)
 	for rest > 0 {
-		<-s.sendBuffer
+		packet := <-s.sendBuffer
+		if packet != nil {
+			FreePacket(packet)
+		}
 		rest--
 	}
 

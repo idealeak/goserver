@@ -25,7 +25,7 @@ func (this *PacketSlicesPacketFactory) CreatePacket() interface{} {
 	return pack
 }
 
-func (this *PacketSlicesHandler) Process(s *netlib.Session, data interface{}) error {
+func (this *PacketSlicesHandler) Process(s *netlib.Session, packetid int, data interface{}) error {
 	if packetslices, ok := data.(*protocol.SSPacketSlices); ok {
 		seqNo := int(packetslices.GetSeqNo())
 		if seqNo < 1 {
@@ -65,7 +65,7 @@ func (this *PacketSlicesHandler) Process(s *netlib.Session, data interface{}) er
 			}
 			h := netlib.GetHandler(packetid)
 			if h != nil {
-				h.Process(s, pck)
+				h.Process(s, packetid, pck)
 			}
 		}
 	}
@@ -76,7 +76,7 @@ func init() {
 	netlib.RegisterHandler(int(protocol.CoreBuiltinPacketID_PACKET_SS_SLICES), &PacketSlicesHandler{})
 	netlib.RegisterFactory(int(protocol.CoreBuiltinPacketID_PACKET_SS_SLICES), &PacketSlicesPacketFactory{})
 
-	netlib.DefaultBuiltinProtocolEncoder.PacketCutor = func(data []byte) (packs []interface{}) {
+	netlib.DefaultBuiltinProtocolEncoder.PacketCutor = func(data []byte) (packid int, packs []interface{}) {
 
 		var (
 			offset    = 0
@@ -85,6 +85,7 @@ func init() {
 			totalSize = len(data)
 			restSize  = len(data)
 		)
+		packid = int(protocol.CoreBuiltinPacketID_PACKET_SS_SLICES)
 		for restSize > 0 {
 			sendSize = restSize
 			if sendSize > netlib.MaxPacketSize-128 {

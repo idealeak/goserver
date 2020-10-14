@@ -26,7 +26,7 @@ func (this *SessionHandlerServiceRegiste) GetInterestOps() uint {
 func (this *SessionHandlerServiceRegiste) OnSessionOpened(s *netlib.Session) {
 	sc := s.GetSessionConfig()
 	if sc.IsClient {
-		logger.Trace("SessionHandlerServiceRegiste:OnSessionOpened ReportService->", sc.Name)
+		logger.Logger.Trace("SessionHandlerServiceRegiste:OnSessionOpened ReportService->", sc.Name)
 		/*报告自己的监听信息*/
 		srvlib.ServiceMgr.ReportService(s)
 	} else {
@@ -37,7 +37,7 @@ func (this *SessionHandlerServiceRegiste) OnSessionOpened(s *netlib.Session) {
 func (this *SessionHandlerServiceRegiste) OnSessionClosed(s *netlib.Session) {
 	sc := s.GetSessionConfig()
 	if !sc.IsClient {
-		logger.Trace("SessionHandlerServiceRegiste:OnSessionClosed ClearServiceBySession")
+		logger.Logger.Warn("SessionHandlerServiceRegiste:OnSessionClosed ClearServiceBySession")
 		srvlib.ServiceMgr.ClearServiceBySession(s)
 	}
 }
@@ -45,10 +45,10 @@ func (this *SessionHandlerServiceRegiste) OnSessionClosed(s *netlib.Session) {
 func (this *SessionHandlerServiceRegiste) OnSessionIdle(s *netlib.Session) {
 }
 
-func (this *SessionHandlerServiceRegiste) OnPacketReceived(s *netlib.Session, packetid int, packet interface{}) {
+func (this *SessionHandlerServiceRegiste) OnPacketReceived(s *netlib.Session, packetid int, logicNo uint32, packet interface{}) {
 }
 
-func (this *SessionHandlerServiceRegiste) OnPacketSent(s *netlib.Session, data []byte) {
+func (this *SessionHandlerServiceRegiste) OnPacketSent(s *netlib.Session, packetid int, logicNo uint32, data []byte) {
 }
 
 func init() {

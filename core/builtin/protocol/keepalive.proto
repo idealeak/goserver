@@ -1,8 +1,5 @@
 package protocol;
 
-import "protocol/corepacketid.proto";
-
 message SSPacketKeepAlive {
-	required CoreBuiltinPacketID PacketId = 1 [default=PACKET_SS_KEEPALIVE];
-	required int32 Flag = 2;
+	required int32 Flag = 1;
 }

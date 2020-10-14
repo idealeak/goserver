@@ -22,6 +22,7 @@ const (
 	CoreBuiltinPacketID_PACKET_SS_SLICES    CoreBuiltinPacketID = -1003
 	CoreBuiltinPacketID_PACKET_SS_AUTH      CoreBuiltinPacketID = -1004
 	CoreBuiltinPacketID_PACKET_SS_KEEPALIVE CoreBuiltinPacketID = -1005
+	CoreBuiltinPacketID_PACKET_SS_AUTH_ACK  CoreBuiltinPacketID = -1006
 )
 
 var CoreBuiltinPacketID_name = map[int32]string{
@@ -31,6 +32,7 @@ var CoreBuiltinPacketID_name = map[int32]string{
 	-1003: "PACKET_SS_SLICES",
 	-1004: "PACKET_SS_AUTH",
 	-1005: "PACKET_SS_KEEPALIVE",
+	-1006: "PACKET_SS_AUTH_ACK",
 }
 var CoreBuiltinPacketID_value = map[string]int32{
 	"PACKET_SS_TX_START":  -1000,
@@ -39,6 +41,7 @@ var CoreBuiltinPacketID_value = map[string]int32{
 	"PACKET_SS_SLICES":    -1003,
 	"PACKET_SS_AUTH":      -1004,
 	"PACKET_SS_KEEPALIVE": -1005,
+	"PACKET_SS_AUTH_ACK":  -1006,
 }
 
 func (x CoreBuiltinPacketID) Enum() *CoreBuiltinPacketID {

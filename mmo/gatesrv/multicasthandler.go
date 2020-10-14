@@ -1,4 +1,4 @@
-package action
+package main
 
 import (
 	"code.google.com/p/goprotobuf/proto"
@@ -28,16 +28,19 @@ func (this *MulticastPacketFactory) CreatePacket() interface{} {
 	return pack
 }
 
-func (this *MulticastPacketFactory) CreateMulticastPacket(data interface{}, sis ...*protocol.MCSessionUnion) (proto.Message, error) {
-	pack := &protocol.SSPacketMulticast{Sessions: sis}
+func (this *MulticastPacketFactory) CreateMulticastPacket(packetid int, data interface{}, sis ...*protocol.MCSessionUnion) (proto.Message, error) {
+	pack := &protocol.SSPacketMulticast{
+		Sessions: sis,
+		PacketId: proto.Int(packetid),
+	}
 	if byteData, ok := data.([]byte); ok {
 		pack.Data = byteData
 	} else {
-		byteData, err := netlib.MarshalPacket(data)
+		byteData, err := netlib.MarshalPacket(packetid, data)
 		if err == nil {
 			pack.Data = byteData
 		} else {
-			logger.Info("MulticastPacketFactory.CreateMulticastPacket err:", err)
+			logger.Logger.Info("MulticastPacketFactory.CreateMulticastPacket err:", err)
 			return nil, err
 		}
 	}
@@ -45,30 +48,29 @@ func (this *MulticastPacketFactory) CreateMulticastPacket(data interface{}, sis 
 	return pack, nil
 }
 
-func (this *MulticastHandler) Process(s *netlib.Session, data interface{}) error {
+func (this *MulticastHandler) Process(s *netlib.Session, packetid int, data interface{}) error {
 	if mp, ok := data.(*protocol.SSPacketMulticast); ok {
 		pd := mp.GetData()
 		sis := mp.GetSessions()
 		for _, si := range sis {
-			ns := this.getSession(si)
-			if ns != nil {
-				ns.Send(pd, s.GetSessionConfig().IsInnerLink)
+			cs := si.GetMccs()
+			if cs != nil {
+				sid := srvlib.SessionId(cs.GetSId())
+				bundleId := sid.SeqId()
+				bs := BundleMgrSington.GetBundleSession(uint16(bundleId))
+				if bs != nil {
+					bs.Send(int(mp.GetPacketId()), pd)
+				}
+			} else {
+				ss := si.GetMcss()
+				if ss != nil {
+					ns := srvlib.ServerSessionMgrSington.GetSession(int(ss.GetSArea()), int(ss.GetSType()), int(ss.GetSId()))
+					if ns != nil {
+						ns.Send(int(mp.GetPacketId()), pd /*, s.GetSessionConfig().IsInnerLink*/)
+					}
+				}
 			}
 		}
 	}
-	return nil
-}
-
-func (this *MulticastHandler) getSession(su *protocol.MCSessionUnion) *netlib.Session {
-	cs := su.GetMccs()
-	if cs != nil {
-		return srvlib.ClientSessionMgrSington.GetSession(cs.GetSId())
-	}
-
-	ss := su.GetMcss()
-	if ss != nil {
-		return srvlib.ServerSessionMgrSington.GetSession(int(ss.GetSArea()), int(ss.GetSType()), int(ss.GetSId()))
-	}
-
 	return nil
 }

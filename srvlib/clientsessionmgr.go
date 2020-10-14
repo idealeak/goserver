@@ -20,7 +20,7 @@ func (csm *ClientSessionMgr) RegisteSession(s *netlib.Session) bool {
 		sid := NewSessionId(s)
 		s.SetAttribute(SessionAttributeClientSession, sid)
 		csm.sessions[sid.Get()] = s
-		logger.Tracef("ClientSessionMgr(%p).RegisteSession client session %v registe", csm, sid.Get())
+		logger.Logger.Tracef("ClientSessionMgr(%p).RegisteSession client session %v registe", csm, sid.Get())
 	}
 	return true
 }
@@ -30,7 +30,7 @@ func (csm *ClientSessionMgr) UnregisteSession(s *netlib.Session) bool {
 	if attr != nil {
 		if sid, ok := attr.(SessionId); ok {
 			delete(csm.sessions, sid.Get())
-			logger.Tracef("ClientSessionMgr(%p).UnregisteSession client session %v unregiste", csm, sid.Get())
+			logger.Logger.Tracef("ClientSessionMgr(%p).UnregisteSession client session %v unregiste", csm, sid.Get())
 		}
 	}
 	return true
@@ -47,9 +47,9 @@ func (csm *ClientSessionMgr) GetSessions() map[int64]*netlib.Session {
 	return csm.sessions
 }
 
-func (csm *ClientSessionMgr) Broadcast(pack interface{}) {
+func (csm *ClientSessionMgr) Broadcast(packetid int, pack interface{}) {
 	for _, s := range csm.sessions {
-		s.Send(pack)
+		s.Send(packetid, pack)
 	}
 }
 
@@ -58,7 +58,7 @@ func (csm *ClientSessionMgr) Count() int {
 }
 
 func (csm *ClientSessionMgr) CloseAll() {
-	logger.Tracef("ClientSessionMgr(%p).CloseAll!!!!!!!!!!!! session's cnt=%v", csm, len(csm.sessions))
+	logger.Logger.Tracef("ClientSessionMgr(%p).CloseAll!!!!!!!!!!!! session's cnt=%v", csm, len(csm.sessions))
 	for _, s := range csm.sessions {
 		s.Close()
 	}

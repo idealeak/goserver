@@ -14,24 +14,14 @@ var _ = &json.SyntaxError{}
 var _ = math.Inf
 
 type SSPacketAuth struct {
-	PacketId         *CoreBuiltinPacketID `protobuf:"varint,1,req,enum=protocol.CoreBuiltinPacketID,def=-1004" json:"PacketId,omitempty"`
-	AuthKey          *string              `protobuf:"bytes,2,req" json:"AuthKey,omitempty"`
-	Timestamp        *int64               `protobuf:"varint,3,req" json:"Timestamp,omitempty"`
-	XXX_unrecognized []byte               `json:"-"`
+	AuthKey          *string `protobuf:"bytes,1,req" json:"AuthKey,omitempty"`
+	Timestamp        *int64  `protobuf:"varint,2,req" json:"Timestamp,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
 }
 
 func (m *SSPacketAuth) Reset()         { *m = SSPacketAuth{} }
 func (m *SSPacketAuth) String() string { return proto.CompactTextString(m) }
 func (*SSPacketAuth) ProtoMessage()    {}
-
-const Default_SSPacketAuth_PacketId CoreBuiltinPacketID = CoreBuiltinPacketID_PACKET_SS_AUTH
-
-func (m *SSPacketAuth) GetPacketId() CoreBuiltinPacketID {
-	if m != nil && m.PacketId != nil {
-		return *m.PacketId
-	}
-	return Default_SSPacketAuth_PacketId
-}
 
 func (m *SSPacketAuth) GetAuthKey() string {
 	if m != nil && m.AuthKey != nil {
@@ -45,6 +35,22 @@ func (m *SSPacketAuth) GetTimestamp() int64 {
 		return *m.Timestamp
 	}
 	return 0
+}
+
+type SSPacketAuthAck struct {
+	Msg              *string `protobuf:"bytes,1,opt" json:"Msg,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
+}
+
+func (m *SSPacketAuthAck) Reset()         { *m = SSPacketAuthAck{} }
+func (m *SSPacketAuthAck) String() string { return proto.CompactTextString(m) }
+func (*SSPacketAuthAck) ProtoMessage()    {}
+
+func (m *SSPacketAuthAck) GetMsg() string {
+	if m != nil && m.Msg != nil {
+		return *m.Msg
+	}
+	return ""
 }
 
 func init() {

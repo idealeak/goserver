@@ -32,15 +32,15 @@ func (kf *KeepAliveFilter) OnSessionClosed(s *netlib.Session) bool {
 func (kf *KeepAliveFilter) OnSessionIdle(s *netlib.Session) bool {
 	p := &protocol.SSPacketKeepAlive{Flag: proto.Int32(0)}
 	proto.SetDefaults(p)
-	s.Send(p)
+	s.Send(int(protocol.CoreBuiltinPacketID_PACKET_SS_KEEPALIVE), p)
 	return true
 }
 
-func (kf *KeepAliveFilter) OnPacketReceived(s *netlib.Session, packetid int, packet interface{}) bool {
+func (kf *KeepAliveFilter) OnPacketReceived(s *netlib.Session, packetid int, logicNo uint32, packet interface{}) bool {
 	return true
 }
 
-func (kf *KeepAliveFilter) OnPacketSent(s *netlib.Session, data []byte) bool {
+func (kf *KeepAliveFilter) OnPacketSent(s *netlib.Session, packetid int, logicNo uint32, data []byte) bool {
 	return true
 }
 
@@ -51,11 +51,11 @@ func init() {
 	netlib.RegisteSessionFilterCreator(KeepAliveFilterName, func() netlib.SessionFilter {
 		return &KeepAliveFilter{}
 	})
-	netlib.RegisterHandler(int(protocol.CoreBuiltinPacketID_PACKET_SS_KEEPALIVE), netlib.HandlerWrapper(func(s *netlib.Session, data interface{}) error {
+	netlib.RegisterHandler(int(protocol.CoreBuiltinPacketID_PACKET_SS_KEEPALIVE), netlib.HandlerWrapper(func(s *netlib.Session, packetid int, data interface{}) error {
 		if p, ok := data.(*protocol.SSPacketKeepAlive); ok {
 			if p.GetFlag() == 0 {
 				p.Flag = proto.Int32(1)
-				s.Send(p)
+				s.Send(int(protocol.CoreBuiltinPacketID_PACKET_SS_KEEPALIVE), p)
 			}
 		}
 		return nil

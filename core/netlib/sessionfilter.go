@@ -22,11 +22,26 @@ type SessionFilterCreator func() SessionFilter
 type SessionFilter interface {
 	GetName() string
 	GetInterestOps() uint
-	OnSessionOpened(s *Session) bool                                    //run in main goroutine
-	OnSessionClosed(s *Session) bool                                    //run in main goroutine
-	OnSessionIdle(s *Session) bool                                      //run in main goroutine
-	OnPacketReceived(s *Session, packetid int, packet interface{}) bool //run in session receive goroutine
-	OnPacketSent(s *Session, data []byte) bool                          //run in session send goroutine
+	OnSessionOpened(s *Session) bool                                                    //run in main goroutine
+	OnSessionClosed(s *Session) bool                                                    //run in main goroutine
+	OnSessionIdle(s *Session) bool                                                      //run in main goroutine
+	OnPacketReceived(s *Session, packetid int, logicNo uint32, packet interface{}) bool //run in session receive goroutine
+	OnPacketSent(s *Session, packetid int, logicNo uint32, data []byte) bool            //run in session send goroutine
+}
+
+type BasicSessionFilter struct {
+}
+
+func (bsf *BasicSessionFilter) GetName() string                 { return "BasicSessionFilter" }
+func (bsf *BasicSessionFilter) GetInterestOps() uint            { return 0 }
+func (bsf *BasicSessionFilter) OnSessionOpened(s *Session) bool { return true }
+func (bsf *BasicSessionFilter) OnSessionClosed(s *Session) bool { return true }
+func (bsf *BasicSessionFilter) OnSessionIdle(s *Session) bool   { return true }
+func (bsf *BasicSessionFilter) OnPacketReceived(s *Session, packetid int, logicNo uint32, packet interface{}) bool {
+	return true
+}
+func (bsf *BasicSessionFilter) OnPacketSent(s *Session, packetid int, logicNo uint32, data []byte) bool {
+	return true
 }
 
 type SessionFilterChain struct {
@@ -110,11 +125,11 @@ func (sfc *SessionFilterChain) OnSessionIdle(s *Session) bool {
 	return true
 }
 
-func (sfc *SessionFilterChain) OnPacketReceived(s *Session, packetid int, packet interface{}) bool {
+func (sfc *SessionFilterChain) OnPacketReceived(s *Session, packetid int, logicNo uint32, packet interface{}) bool {
 	for e := sfc.filtersInterestOps[InterestOps_Received].Front(); e != nil; e = e.Next() {
 		sf := e.Value.(SessionFilter)
 		if sf != nil {
-			if !sf.OnPacketReceived(s, packetid, packet) {
+			if !sf.OnPacketReceived(s, packetid, logicNo, packet) {
 				return false
 			}
 		}
@@ -122,11 +137,11 @@ func (sfc *SessionFilterChain) OnPacketReceived(s *Session, packetid int, packet
 	return true
 }
 
-func (sfc *SessionFilterChain) OnPacketSent(s *Session, data []byte) bool {
+func (sfc *SessionFilterChain) OnPacketSent(s *Session, packetid int, logicNo uint32, data []byte) bool {
 	for e := sfc.filtersInterestOps[InterestOps_Sent].Front(); e != nil; e = e.Next() {
 		sf := e.Value.(SessionFilter)
 		if sf != nil {
-			if !sf.OnPacketSent(s, data) {
+			if !sf.OnPacketSent(s, packetid, logicNo, data) {
 				return false
 			}
 		}

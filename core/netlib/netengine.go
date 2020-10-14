@@ -2,11 +2,11 @@ package netlib
 
 import (
 	"errors"
+	"math"
 	"time"
 
 	"github.com/idealeak/goserver/core/logger"
 	"github.com/idealeak/goserver/core/module"
-	"github.com/idealeak/goserver/core/profile"
 	"github.com/idealeak/goserver/core/utils"
 )
 
@@ -19,16 +19,18 @@ var (
 )
 
 type NetEngine struct {
-	pool     map[int]ioService
-	childAck chan int
-	quit     bool
-	reaped   bool
+	pool      map[int]ioService
+	childAck  chan int
+	backlogSc chan *SessionConfig
+	quit      bool
+	reaped    bool
 }
 
 func newNetEngine() *NetEngine {
 	e := &NetEngine{
-		pool:     make(map[int]ioService),
-		childAck: make(chan int, IoServiceMaxCount),
+		pool:      make(map[int]ioService),
+		childAck:  make(chan int, IoServiceMaxCount),
+		backlogSc: make(chan *SessionConfig, IoServiceMaxCount),
 	}
 
 	return e
@@ -40,15 +42,21 @@ func (e *NetEngine) newIoService(sc *SessionConfig) ioService {
 		if !sc.AllowMultiConn && ConnectorMgr.IsConnecting(sc) {
 			return nil
 		}
-		if sc.Protocol == "ws" {
+		switch sc.Protocol {
+		case "ws":
 			s = newWsConnector(e, sc)
-		} else {
+		case "udp":
+			s = newUdpConnector(e, sc)
+		default:
 			s = newTcpConnector(e, sc)
 		}
 	} else {
-		if sc.Protocol == "ws" {
+		switch sc.Protocol {
+		case "ws":
 			s = newWsAcceptor(e, sc)
-		} else {
+		case "udp":
+			s = newUdpAcceptor(e, sc)
+		default:
 			s = newTcpAcceptor(e, sc)
 		}
 	}
@@ -109,19 +117,16 @@ func (e *NetEngine) Init() {
 			e.pool[Config.IoServices[i].Id] = s
 			err = s.start()
 			if err != nil {
-				logger.Error(err)
+				logger.Logger.Error(err)
 			}
 		}
 	}
 
-	time.AfterFunc(time.Minute*5, func() { e.dump() })
+	//time.AfterFunc(time.Minute*5, func() { e.dump() })
 }
 
 func (e *NetEngine) Update() {
 	defer utils.DumpStackIfPanic("NetEngine.Update")
-
-	watch := profile.TimeStatisticMgr.WatchStart(e.ModuleName())
-	defer watch.Stop()
 
 	e.clearClosedIo()
 
@@ -156,6 +161,15 @@ func (e *NetEngine) clearClosedIo() {
 		select {
 		case k := <-e.childAck:
 			delete(e.pool, k)
+		case sc := <-e.backlogSc:
+			s := e.newIoService(sc)
+			if s != nil {
+				e.pool[sc.Id] = s
+				err := s.start()
+				if err != nil {
+					logger.Logger.Error(err)
+				}
+			}
 		default:
 			return
 		}
@@ -191,8 +205,18 @@ func (e *NetEngine) dump() {
 	}
 	time.AfterFunc(time.Minute*5, func() { e.dump() })
 }
+
+func (e *NetEngine) stats() map[int]ServiceStats {
+	stats := make(map[int]ServiceStats)
+	for k, v := range e.pool {
+		s := v.stats()
+		stats[k] = s
+	}
+	return stats
+}
+
 func init() {
-	module.RegisteModule(NetModule, 0, 0)
+	module.RegisteModule(NetModule, 0, math.MaxInt32)
 }
 
 func Connect(sc *SessionConfig) error {
@@ -209,4 +233,8 @@ func GetAcceptors() []Acceptor {
 
 func ShutConnector(ip string, port int) {
 	NetModule.ShutConnector(ip, port)
+}
+
+func Stats() map[int]ServiceStats {
+	return NetModule.stats()
 }

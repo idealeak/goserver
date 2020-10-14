@@ -14,8 +14,8 @@ var _ = &json.SyntaxError{}
 var _ = math.Inf
 
 type SSPacketBroadcast struct {
-	PacketId         *SrvlibPacketID `protobuf:"varint,1,req,enum=protocol.SrvlibPacketID,def=-2002" json:"PacketId,omitempty"`
-	SessParam        *BCSessionUnion `protobuf:"bytes,2,req" json:"SessParam,omitempty"`
+	SessParam        *BCSessionUnion `protobuf:"bytes,1,req" json:"SessParam,omitempty"`
+	PacketId         *int32          `protobuf:"varint,2,req" json:"PacketId,omitempty"`
 	Data             []byte          `protobuf:"bytes,3,req" json:"Data,omitempty"`
 	XXX_unrecognized []byte          `json:"-"`
 }
@@ -24,20 +24,18 @@ func (m *SSPacketBroadcast) Reset()         { *m = SSPacketBroadcast{} }
 func (m *SSPacketBroadcast) String() string { return proto.CompactTextString(m) }
 func (*SSPacketBroadcast) ProtoMessage()    {}
 
-const Default_SSPacketBroadcast_PacketId SrvlibPacketID = SrvlibPacketID_PACKET_SS_BROADCAST
-
-func (m *SSPacketBroadcast) GetPacketId() SrvlibPacketID {
-	if m != nil && m.PacketId != nil {
-		return *m.PacketId
-	}
-	return Default_SSPacketBroadcast_PacketId
-}
-
 func (m *SSPacketBroadcast) GetSessParam() *BCSessionUnion {
 	if m != nil {
 		return m.SessParam
 	}
 	return nil
+}
+
+func (m *SSPacketBroadcast) GetPacketId() int32 {
+	if m != nil && m.PacketId != nil {
+		return *m.PacketId
+	}
+	return 0
 }
 
 func (m *SSPacketBroadcast) GetData() []byte {

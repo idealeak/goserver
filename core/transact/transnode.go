@@ -6,6 +6,8 @@ import (
 
 	"github.com/idealeak/goserver/core/basic"
 	"github.com/idealeak/goserver/core/timer"
+	"sync"
+	"sync/atomic"
 )
 
 const (
@@ -49,6 +51,7 @@ const (
 
 var (
 	TransNodeIDNil = TransNodeID(0)
+	transStats     = new(sync.Map)
 )
 
 type TransExeResult int
@@ -72,6 +75,43 @@ type TransResult struct {
 	RetFiels interface{}
 }
 
+const (
+	TransStatsOp_Exe = iota
+	TransStatsOp_Rollback
+	TransStatsOp_Commit
+	TransStatsOp_Yiled
+	TransStatsOp_Resume
+	TransStatsOp_Timeout
+)
+
+type TransStats struct {
+	ExecuteTimes    int64
+	RollbackTimes   int64
+	CommitTimes     int64
+	TimeoutTimes    int64
+	YieldTimes      int64
+	ResumeTimes     int64
+	TotalRuningTime int64
+	MaxRuningTime   int64
+}
+
+func (stats *TransStats) incStats(op int) {
+	switch op {
+	case TransStatsOp_Exe:
+		atomic.AddInt64(&stats.ExecuteTimes, 1)
+	case TransStatsOp_Rollback:
+		atomic.AddInt64(&stats.RollbackTimes, 1)
+	case TransStatsOp_Commit:
+		atomic.AddInt64(&stats.CommitTimes, 1)
+	case TransStatsOp_Yiled:
+		atomic.AddInt64(&stats.YieldTimes, 1)
+	case TransStatsOp_Resume:
+		atomic.AddInt64(&stats.ResumeTimes, 1)
+	case TransStatsOp_Timeout:
+		atomic.AddInt64(&stats.TimeoutTimes, 1)
+	}
+}
+
 type TransCallback func(*TransNode)
 type TransBrotherNotify func(*TransNode, TransExeResult)
 type TransNode struct {
@@ -86,12 +126,37 @@ type TransNode struct {
 	handler      TransHandler
 	AsynCallback TransCallback
 	brothers     map[*TransNode]TransBrotherNotify
+	createTime   time.Time
 	start        bool
 	yield        bool
 	resume       bool
 	done         bool
 	owner        *transactCoordinater
 	ud           interface{}
+}
+
+func (this *TransNode) incStats(op int) {
+	if s, exist := transStats.Load(this.MyTnp.Tt); exist {
+		if stats, ok := s.(*TransStats); ok {
+			stats.incStats(op)
+		}
+	} else {
+		stats := &TransStats{}
+		transStats.Store(this.MyTnp.Tt, stats)
+		stats.incStats(op)
+	}
+}
+
+func (this *TransNode) statsRuningTime() {
+	if s, exist := transStats.Load(this.MyTnp.Tt); exist {
+		if stats, ok := s.(*TransStats); ok {
+			runingTime := int64(time.Now().Sub(this.createTime) / time.Millisecond)
+			if runingTime > stats.MaxRuningTime {
+				stats.MaxRuningTime = runingTime
+			}
+			stats.TotalRuningTime += runingTime
+		}
+	}
 }
 
 func (this *TransNode) execute(ud interface{}) TransExeResult {
@@ -103,6 +168,7 @@ func (this *TransNode) execute(ud interface{}) TransExeResult {
 	}
 	this.start = true
 	ret := this.handler.OnExcute(this, ud)
+	this.incStats(TransStatsOp_Exe)
 	if ret == TransExeResult_Yield {
 		return this.Yield()
 	}
@@ -162,7 +228,8 @@ func (this *TransNode) commit() TransExeResult {
 
 	this.done = true
 	this.handler.OnCommit(this)
-
+	this.incStats(TransStatsOp_Commit)
+	this.statsRuningTime()
 	if len(this.Childs) > 0 && Config.tcs != nil {
 		for _, v := range this.Childs {
 			if v.Tct == TransactCommitPolicy_TwoPhase {
@@ -194,7 +261,8 @@ func (this *TransNode) rollback(exclude TransNodeID) TransExeResult {
 
 	this.done = true
 	this.handler.OnRollBack(this)
-
+	this.incStats(TransStatsOp_Rollback)
+	this.statsRuningTime()
 	if len(this.Childs) > 0 && Config.tcs != nil {
 		for k, v := range this.Childs {
 			if k != exclude && v.Tct == TransactCommitPolicy_TwoPhase {
@@ -225,6 +293,7 @@ func (this *TransNode) timeout() TransExeResult {
 			Config.tcs.SendTransResult(this.ParentTnp, this.MyTnp, this.TransRep)
 		}
 	}
+	this.incStats(TransStatsOp_Timeout)
 	this.rollback(TransNodeIDNil)
 	return TransExeResult_Success
 }
@@ -316,12 +385,14 @@ func (this *TransNode) GetChildTransParam(childid TransNodeID) *TransNodeParam {
 func (this *TransNode) Yield() TransExeResult {
 	this.yield = true
 	SendTranscatYield(this)
+	this.incStats(TransStatsOp_Yiled)
 	return TransExeResult_Success
 }
 
 func (this *TransNode) Resume() TransExeResult {
 	this.resume = true
 	SendTranscatResume(this)
+	this.incStats(TransStatsOp_Resume)
 	return TransExeResult_Success
 }
 
@@ -358,4 +429,16 @@ func (this *TransNode) notifyBrother(ter TransExeResult) {
 	for k, v := range this.brothers {
 		v(k, ter)
 	}
+}
+
+func Stats() map[int]TransStats {
+	stats := make(map[int]TransStats)
+	transStats.Range(func(k, v interface{}) bool {
+		if s, ok := v.(*TransStats); ok {
+			d := *s
+			stats[int(k.(TransType))] = d
+		}
+		return true
+	})
+	return stats
 }

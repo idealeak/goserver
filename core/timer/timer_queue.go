@@ -16,6 +16,7 @@ type TimerEntity struct {
 	times    int
 	ta       TimerAction
 	h        TimerHandle
+	stoped   bool
 }
 
 type TimerQueue struct {

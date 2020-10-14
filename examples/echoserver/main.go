@@ -19,5 +19,5 @@ func main() {
 	}()
 
 	waiter := module.Start()
-	waiter.Wait()
+	waiter.Wait("main")
 }

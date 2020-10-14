@@ -2,36 +2,40 @@
 package netlib
 
 import (
+	"fmt"
 	"net"
 	"strconv"
 	"time"
 
 	"github.com/idealeak/goserver/core/logger"
 	"github.com/idealeak/goserver/core/utils"
+	"sync/atomic"
 )
 
 type TcpConnector struct {
-	sc        *SessionConfig
-	e         *NetEngine
-	s         *TcpSession
-	idGen     utils.IdGen
-	connChan  chan net.Conn
-	reaper    chan ISession
-	waitor    *utils.Waitor
-	quit      bool
-	reaped    bool
-	maxActive int
-	maxDone   int
+	sc         *SessionConfig
+	e          *NetEngine
+	s          *TcpSession
+	idGen      utils.IdGen
+	connChan   chan net.Conn
+	reaper     chan ISession
+	waitor     *utils.Waitor
+	createTime time.Time
+	quit       bool
+	reaped     bool
+	maxActive  int
+	maxDone    int
 }
 
 func newTcpConnector(e *NetEngine, sc *SessionConfig) *TcpConnector {
 	c := &TcpConnector{
-		sc:       sc,
-		e:        e,
-		s:        nil,
-		connChan: make(chan net.Conn, 2),
-		reaper:   make(chan ISession, 1),
-		waitor:   utils.NewWaitor(),
+		sc:         sc,
+		e:          e,
+		s:          nil,
+		connChan:   make(chan net.Conn, 2),
+		reaper:     make(chan ISession, 1),
+		waitor:     utils.NewWaitor("netlib.TcpConnector"),
+		createTime: time.Now(),
 	}
 
 	ConnectorMgr.registeConnector(c)
@@ -39,9 +43,9 @@ func newTcpConnector(e *NetEngine, sc *SessionConfig) *TcpConnector {
 }
 
 func (c *TcpConnector) connectRoutine() {
-
-	c.waitor.Add(1)
-	defer c.waitor.Done()
+	name := fmt.Sprintf("TcpConnector.connectRoutine(%v_%v)", c.sc.Name, c.sc.Id)
+	c.waitor.Add(name, 1)
+	defer c.waitor.Done(name)
 
 	service := c.sc.Ip + ":" + strconv.Itoa(int(c.sc.Port))
 	conn, err := net.Dial("tcp", service)
@@ -99,26 +103,30 @@ func (c *TcpConnector) procActive() {
 	if c.s != nil && c.s.canShutdown() {
 		return
 	} else if c.s != nil && c.s.IsConned() {
-		for i = 0; i < c.sc.MaxDone; i++ {
-			if len(c.s.recvBuffer) > 0 {
-				data, ok := <-c.s.recvBuffer
-				if !ok {
-					break
+		if len(c.s.recvBuffer) > 0 {
+			for i = 0; i < c.sc.MaxDone; i++ {
+				select {
+				case data, ok := <-c.s.recvBuffer:
+					if !ok {
+						goto NEXT
+					}
+					data.do()
+					doneCnt++
+				default:
+					goto NEXT
 				}
-				data.do()
-				doneCnt++
 			}
 		}
 	}
-
+NEXT:
 	if doneCnt > c.maxDone {
 		c.maxDone = doneCnt
 	}
 }
 
 func (c *TcpConnector) dump() {
-	logger.Info("=========connector dump maxDone=", c.maxDone)
-	logger.Info("=========session recvBuffer size=", len(c.s.recvBuffer), " sendBuffer size=", len(c.s.sendBuffer))
+	logger.Logger.Info("=========connector dump maxDone=", c.maxDone)
+	logger.Logger.Info("=========session recvBuffer size=", len(c.s.recvBuffer), " sendBuffer size=", len(c.s.sendBuffer))
 }
 
 func (c *TcpConnector) procChanEvent() {
@@ -142,13 +150,19 @@ func (c *TcpConnector) onClose(s ISession) {
 }
 
 func (c *TcpConnector) procConnected(conn net.Conn) {
-
 	if tcpconn, ok := conn.(*net.TCPConn); ok {
 		tcpconn.SetLinger(c.sc.SoLinger)
 		tcpconn.SetNoDelay(c.sc.NoDelay)
-		tcpconn.SetKeepAlive(c.sc.KeepAlive)
 		tcpconn.SetReadBuffer(c.sc.RcvBuff)
 		tcpconn.SetWriteBuffer(c.sc.SndBuff)
+		tcpconn.SetKeepAlive(c.sc.KeepAlive)
+		if c.sc.KeepAlive {
+			tcpconn.SetKeepAlivePeriod(c.sc.KeepAlivePeriod)
+			//			err := tcpkeepalive.SetKeepAlive(conn, c.sc.KeepAliveIdle, c.sc.KeepAliveCount, c.sc.KeepAlivePeriod)
+			//			if err != nil {
+			//				logger.Logger.Warnf("(a *TcpConnector) procConnected SetKeepAlive err:%v", err)
+			//			}
+		}
 	}
 
 	c.s = newTcpSession(c.idGen.NextId(), conn, c.sc, c)
@@ -185,7 +199,7 @@ func (c *TcpConnector) reapRoutine() {
 
 	c.reaped = true
 
-	c.waitor.Wait()
+	c.waitor.Wait(fmt.Sprintf("TcpConnector.reapRoutine_%v", c.sc.Id))
 	select {
 	case conn := <-c.connChan:
 		conn.Close()
@@ -197,4 +211,36 @@ func (c *TcpConnector) reapRoutine() {
 
 func (c *TcpConnector) GetSessionConfig() *SessionConfig {
 	return c.sc
+}
+
+func (c *TcpConnector) stats() ServiceStats {
+	tNow := time.Now()
+	stats := ServiceStats{
+		Id:          c.sc.Id,
+		Type:        c.sc.Type,
+		Name:        c.sc.Name,
+		MaxActive:   1,
+		MaxDone:     c.maxDone,
+		RunningTime: int64(tNow.Sub(c.createTime) / time.Second),
+	}
+
+	if c.s != nil {
+		stats.Addr = c.s.LocalAddr()
+		stats.SessionStats = []SessionStats{
+			{
+				Id:           c.s.Id,
+				GroupId:      c.s.GroupId,
+				SendedBytes:  atomic.LoadInt64(&c.s.sendedBytes),
+				RecvedBytes:  atomic.LoadInt64(&c.s.recvedBytes),
+				SendedPack:   atomic.LoadInt64(&c.s.sendedPack),
+				RecvedPack:   atomic.LoadInt64(&c.s.recvedPack),
+				PendSendPack: len(c.s.sendBuffer),
+				PendRecvPack: len(c.s.recvBuffer),
+				RemoteAddr:   c.s.RemoteAddr(),
+				RunningTime:  int64(tNow.Sub(c.s.createTime) / time.Second),
+			},
+		}
+
+	}
+	return stats
 }

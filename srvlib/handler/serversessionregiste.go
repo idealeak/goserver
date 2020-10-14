@@ -29,9 +29,10 @@ func (sfl *SessionHandlerSrvRegiste) OnSessionOpened(s *netlib.Session) {
 		Type:   proto.Int(netlib.Config.SrvInfo.Type),
 		AreaId: proto.Int(netlib.Config.SrvInfo.AreaID),
 		Name:   proto.String(netlib.Config.SrvInfo.Name),
+		Data:   proto.String(netlib.Config.SrvInfo.Data),
 	}
 	proto.SetDefaults(registePacket)
-	s.Send(registePacket)
+	s.Send(int(protocol.SrvlibPacketID_PACKET_SS_REGISTE), registePacket)
 }
 
 func (sfl *SessionHandlerSrvRegiste) OnSessionClosed(s *netlib.Session) {
@@ -41,10 +42,10 @@ func (sfl *SessionHandlerSrvRegiste) OnSessionClosed(s *netlib.Session) {
 func (sfl *SessionHandlerSrvRegiste) OnSessionIdle(s *netlib.Session) {
 }
 
-func (sfl *SessionHandlerSrvRegiste) OnPacketReceived(s *netlib.Session, packetid int, packet interface{}) {
+func (sfl *SessionHandlerSrvRegiste) OnPacketReceived(s *netlib.Session, packetid int, logicNo uint32, packet interface{}) {
 }
 
-func (sfl *SessionHandlerSrvRegiste) OnPacketSent(s *netlib.Session, data []byte) {
+func (sfl *SessionHandlerSrvRegiste) OnPacketSent(s *netlib.Session, packetid int, logicNo uint32, data []byte) {
 }
 
 func init() {
@@ -56,7 +57,7 @@ func init() {
 		return &protocol.SSSrvRegiste{}
 	}))
 
-	netlib.RegisterHandler(int(protocol.SrvlibPacketID_PACKET_SS_REGISTE), netlib.HandlerWrapper(func(s *netlib.Session, data interface{}) error {
+	netlib.RegisterHandler(int(protocol.SrvlibPacketID_PACKET_SS_REGISTE), netlib.HandlerWrapper(func(s *netlib.Session, packetid int, data interface{}) error {
 		if registePacket, ok := data.(*protocol.SSSrvRegiste); ok {
 			s.SetAttribute(srvlib.SessionAttributeServerInfo, registePacket)
 			srvlib.ServerSessionMgrSington.RegisteSession(s)

@@ -23,8 +23,8 @@ func (this *PacketRedirectPacketFactory) CreatePacket() interface{} {
 	return pack
 }
 
-func (this *PacketRedirectHandler) Process(s *netlib.Session, data interface{}) error {
-	logger.Trace("PacketRedirectHandler.Process")
+func (this *PacketRedirectHandler) Process(s *netlib.Session, packetid int, data interface{}) error {
+	logger.Logger.Trace("PacketRedirectHandler.Process")
 	if pr, ok := data.(*protocol.SSPacketRedirect); ok {
 		packid, pack, err := netlib.UnmarshalPacket(pr.GetData())
 		if err != nil {
@@ -32,11 +32,11 @@ func (this *PacketRedirectHandler) Process(s *netlib.Session, data interface{}) 
 		}
 		h := srvlib.GetHandler(packid)
 		if h != nil {
-			return h.Process(s, pack, pr.GetClientSid(), pr.GetSrvRoutes())
+			return h.Process(s, packid, pack, pr.GetClientSid(), pr.GetSrvRoutes())
 		} else {
 			nh := netlib.GetHandler(packid)
 			if nh != nil {
-				return nh.Process(s, pack)
+				return nh.Process(s, packid, pack)
 			}
 		}
 	}

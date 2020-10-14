@@ -1,11 +1,9 @@
 package protocol;
 
-import "protocol/packetid.proto";
-
 message SSPacketRedirect {
-	required SrvlibPacketID PacketId = 1 [default=PACKET_SS_REDIRECT];
-	optional int64 ClientSid = 2;
-	repeated SrvInfo SrvRoutes = 3;
+	optional int64 ClientSid = 1;
+	repeated SrvInfo SrvRoutes = 2;
+	required int32 PacketId = 3;
 	required bytes Data = 4;
 }
 

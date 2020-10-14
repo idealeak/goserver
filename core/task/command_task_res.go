@@ -12,7 +12,7 @@ type taskResCommand struct {
 func (trc *taskResCommand) Done(o *basic.Object) error {
 	defer o.ProcessSeqnum()
 	defer utils.DumpStackIfPanic("taskExeCommand")
-	trc.t.n.Done(<-trc.t.r)
+	trc.t.n.Done(<-trc.t.r, trc.t)
 	return nil
 }
 

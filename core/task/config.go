@@ -18,7 +18,7 @@ type Configuration struct {
 }
 
 func (c *Configuration) Name() string {
-	return "task"
+	return "executor"
 }
 
 func (c *Configuration) Init() error {

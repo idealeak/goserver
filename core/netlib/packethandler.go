@@ -9,13 +9,13 @@ import (
 var handlers = make(map[int]Handler)
 
 type Handler interface {
-	Process(session *Session, data interface{}) error
+	Process(session *Session, packetid int, data interface{}) error
 }
 
-type HandlerWrapper func(session *Session, data interface{}) error
+type HandlerWrapper func(session *Session, packetid int, data interface{}) error
 
-func (hw HandlerWrapper) Process(session *Session, data interface{}) error {
-	return hw(session, data)
+func (hw HandlerWrapper) Process(session *Session, packetid int, data interface{}) error {
+	return hw(session, packetid, data)
 }
 
 func RegisterHandler(packetId int, h Handler) {

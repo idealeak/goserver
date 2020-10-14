@@ -20,6 +20,8 @@
 				"Name": "EchoService",
 				"Ip": "",
 				"Port": 2345,
+				"Protocol":"ws",
+				"Path":"/",
 				"MaxDone": 20,
 				"MaxPend": 20,
 				"MaxPacket": 65535,

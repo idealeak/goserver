@@ -1,15 +1,31 @@
 package logger
 
 import (
+	"fmt"
+
 	"github.com/cihub/seelog"
 )
 
 var (
-	Logger ILogger
+	Logger seelog.LoggerInterface
 )
 
 func init() {
 	Logger, _ = seelog.LoggerFromConfigAsFile("logger.xml")
+	seelog.ReplaceLogger(Logger)
+}
+
+func Reload(fileName string) error {
+	newLogger, err := seelog.LoggerFromConfigAsFile(fileName)
+	if err != nil {
+		return err
+	}
+	if newLogger != nil {
+		Logger = newLogger
+		seelog.ReplaceLogger(Logger)
+		fmt.Println("Reload success")
+	}
+	return nil
 }
 
 func Tracef(format string, params ...interface{}) {

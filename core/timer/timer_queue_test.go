@@ -54,3 +54,35 @@ func TestTimerQueuePush(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkTimerQueuePush(b *testing.B) {
+	tq := NewTimerQueue()
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		h := generateTimerHandle()
+		te := &TimerEntity{
+			h: h,
+		}
+		tq.Push(te)
+	}
+	b.StopTimer()
+}
+
+func BenchmarkTimerQueuePop(b *testing.B) {
+	tq := NewTimerQueue()
+
+	for i := 0; i < b.N; i++ {
+		h := generateTimerHandle()
+		te := &TimerEntity{
+			h: h,
+		}
+		tq.Push(te)
+	}
+
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		te := tq.Pop()
+		tq.Push(te)
+	}
+	b.StopTimer()
+}

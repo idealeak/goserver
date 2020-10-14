@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/idealeak/goserver/core/logger"
 	"github.com/idealeak/goserver/core/utils"
+	"sync/atomic"
 )
 
 const (
@@ -32,6 +33,7 @@ type WsAcceptor struct {
 	acptChan    chan *WsSession
 	waitor      *utils.Waitor
 	upgrader    websocket.Upgrader
+	createTime  time.Time
 	quit        bool
 	reaped      bool
 	maxActive   int
@@ -44,12 +46,13 @@ func newWsAcceptor(e *NetEngine, sc *SessionConfig) *WsAcceptor {
 		sc:          sc,
 		quit:        false,
 		mapSessions: make(map[int]*WsSession),
-		waitor:      utils.NewWaitor(),
+		waitor:      utils.NewWaitor("netlib.WsAcceptor"),
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  sc.RcvBuff,
 			WriteBufferSize: sc.SndBuff,
 			CheckOrigin:     func(r *http.Request) bool { return true },
 		},
+		createTime: time.Now(),
 	}
 
 	a.init()
@@ -77,7 +80,7 @@ func (a *WsAcceptor) start() (err error) {
 			return
 		} else if err != nil {
 			http.Error(res, fmt.Sprintf("%v", err), 500)
-			logger.Error(err)
+			logger.Logger.Error(err)
 			return
 		}
 		ws.SetPongHandler(func(string) error {
@@ -91,7 +94,7 @@ func (a *WsAcceptor) start() (err error) {
 		service := a.sc.Ip + ":" + strconv.Itoa(int(a.sc.Port))
 		err := http.ListenAndServe(service, nil)
 		if err != nil {
-			logger.Error(err)
+			logger.Logger.Error(err)
 		}
 	}()
 
@@ -142,7 +145,7 @@ func (a *WsAcceptor) reapRoutine() {
 		return
 	}
 	a.reaped = true
-	a.waitor.Wait()
+	a.waitor.Wait(fmt.Sprintf("WsAcceptor.reapRoutine_%v", a.sc.Id))
 
 	a.e.childAck <- a.sc.Id
 }
@@ -159,24 +162,26 @@ func (a *WsAcceptor) procActive() {
 	var doneCnt int
 	for _, v := range a.mapSessions {
 		//nowork = true
-		for i = 0; i < a.sc.MaxDone; i++ {
-			if v.IsConned() && len(v.recvBuffer) > 0 {
-				data, ok := <-v.recvBuffer
-				if !ok {
-					break
+		if v.IsConned() && len(v.recvBuffer) > 0 {
+			for i = 0; i < a.sc.MaxDone; i++ {
+				select {
+				case data, ok := <-v.recvBuffer:
+					if !ok {
+						goto NEXT
+					}
+					data.do()
+					//nowork = false
+					doneCnt++
+				default:
+					goto NEXT
 				}
-				data.do()
-				//nowork = false
-				doneCnt++
-			} else {
-				break
 			}
 		}
-		/*
-			if nowork && v.IsConned() && v.IsIdle() {
-				v.FireSessionIdle()
-			}
-		*/
+	NEXT:
+		//关闭idle
+		//		if nowork && v.IsConned() && v.IsIdle() {
+		//			v.FireSessionIdle()
+		//		}
 	}
 
 	if doneCnt > a.maxDone {
@@ -188,9 +193,9 @@ func (a *WsAcceptor) procActive() {
 }
 
 func (a *WsAcceptor) dump() {
-	logger.Info("=========wsaccept dump maxSessions=", a.maxActive, " maxDone=", a.maxDone)
+	logger.Logger.Info("=========wsaccept dump maxSessions=", a.maxActive, " maxDone=", a.maxDone)
 	for sid, s := range a.mapSessions {
-		logger.Info("=========wssession:", sid, " recvBuffer size=", len(s.recvBuffer), " sendBuffer size=", len(s.sendBuffer))
+		logger.Logger.Info("=========wssession:", sid, " recvBuffer size=", len(s.recvBuffer), " sendBuffer size=", len(s.sendBuffer))
 	}
 }
 
@@ -230,4 +235,35 @@ func (a *WsAddr) String() string {
 
 func (a *WsAcceptor) Addr() net.Addr {
 	return &WsAddr{acceptor: a}
+}
+
+func (a *WsAcceptor) stats() ServiceStats {
+	tNow := time.Now()
+	stats := ServiceStats{
+		Id:          a.sc.Id,
+		Type:        a.sc.Type,
+		Name:        a.sc.Name,
+		Addr:        a.Addr().String(),
+		MaxActive:   a.maxActive,
+		MaxDone:     a.maxDone,
+		RunningTime: int64(tNow.Sub(a.createTime) / time.Second),
+	}
+
+	stats.SessionStats = make([]SessionStats, 0, len(a.mapSessions))
+	for _, s := range a.mapSessions {
+		ss := SessionStats{
+			Id:           s.Id,
+			GroupId:      s.GroupId,
+			SendedBytes:  atomic.LoadInt64(&s.sendedBytes),
+			RecvedBytes:  atomic.LoadInt64(&s.recvedBytes),
+			SendedPack:   atomic.LoadInt64(&s.sendedPack),
+			RecvedPack:   atomic.LoadInt64(&s.recvedPack),
+			PendSendPack: len(s.sendBuffer),
+			PendRecvPack: len(s.recvBuffer),
+			RemoteAddr:   s.RemoteAddr(),
+			RunningTime:  int64(tNow.Sub(a.createTime) / time.Second),
+		}
+		stats.SessionStats = append(stats.SessionStats, ss)
+	}
+	return stats
 }

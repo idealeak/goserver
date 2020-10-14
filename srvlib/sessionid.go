@@ -22,7 +22,12 @@ type SessionId int64
 
 func NewSessionId(s *netlib.Session) SessionId {
 	sc := s.GetSessionConfig()
-	id := int64(sc.AreaId)<<SessionIdSrvAreaOffset | int64(sc.Type)<<SessionIdSrvTypeOffset | int64(sc.Id)<<SessionIdSrvIdOffset | int64(s.Id)
+	id := int64(sc.AreaId&SessionIdSrvAreaIdMask)<<SessionIdSrvAreaOffset | int64(sc.Type&SessionIdSrvTypeMask)<<SessionIdSrvTypeOffset | int64(sc.Id&SessionIdSrvIdMask)<<SessionIdSrvIdOffset | int64(s.Id)&SessionIdSeqIdMask
+	return SessionId(id)
+}
+
+func NewSessionIdEx(areaId, srvType, srvId, seq int32) SessionId {
+	id := int64(areaId&SessionIdSrvAreaIdMask)<<SessionIdSrvAreaOffset | int64(srvType&SessionIdSrvTypeMask)<<SessionIdSrvTypeOffset | int64(srvId&SessionIdSrvIdMask)<<SessionIdSrvIdOffset | int64(seq)&SessionIdSeqIdMask
 	return SessionId(id)
 }
 

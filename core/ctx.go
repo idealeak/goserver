@@ -3,6 +3,7 @@ package core
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/idealeak/goserver/core/basic"
 	"github.com/idealeak/goserver/core/utils"
@@ -23,6 +24,7 @@ type hookfunc func() error
 
 type Ctx struct {
 	*basic.Object
+	CoreObj *basic.Object
 }
 
 func newCtx() *Ctx {
@@ -39,8 +41,9 @@ func (ctx *Ctx) init() {
 			QueueBacklog: 1024,
 		},
 		nil)
-	ctx.Object.Waitor = utils.NewWaitor()
+	ctx.Object.Waitor = utils.NewWaitor("core.Ctx")
 	ctx.UserData = ctx
+	ctx.Active()
 }
 
 func LaunchChild(o *basic.Object) {
@@ -52,7 +55,8 @@ func Terminate(o *basic.Object) {
 }
 
 func CoreObject() *basic.Object {
-	return AppCtx.GetChildById(ObjId_CoreId)
+	//return AppCtx.GetChildById(ObjId_CoreId)
+	return AppCtx.CoreObj
 }
 
 func RegisteHook(hookpos int, f hookfunc) {
@@ -77,11 +81,14 @@ func ExecuteHook(hookpos int) error {
 }
 
 func WritePid() {
-	f, err := os.OpenFile(".pid", os.O_CREATE|os.O_EXCL|os.O_RDWR, os.ModePerm)
-	if err != nil {
-		panic(err)
-		return
+	if len(os.Args) > 0 {
+		baseName := filepath.Base(os.Args[0])
+		f, err := os.OpenFile(baseName+".pid", os.O_CREATE|os.O_TRUNC|os.O_RDWR, os.ModePerm)
+		if err != nil {
+			panic(fmt.Sprintf("%s had running", os.Args[0]))
+			return
+		}
+
+		f.WriteString(fmt.Sprintf("%v", os.Getpid()))
 	}
-	defer f.Close()
-	f.WriteString(fmt.Sprintf("%v", os.Getpid()))
 }

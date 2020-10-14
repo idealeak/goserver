@@ -14,25 +14,16 @@ var _ = &json.SyntaxError{}
 var _ = math.Inf
 
 type SSPacketRedirect struct {
-	PacketId         *SrvlibPacketID `protobuf:"varint,1,req,enum=protocol.SrvlibPacketID,def=-2004" json:"PacketId,omitempty"`
-	ClientSid        *int64          `protobuf:"varint,2,opt" json:"ClientSid,omitempty"`
-	SrvRoutes        []*SrvInfo      `protobuf:"bytes,3,rep" json:"SrvRoutes,omitempty"`
-	Data             []byte          `protobuf:"bytes,4,req" json:"Data,omitempty"`
-	XXX_unrecognized []byte          `json:"-"`
+	ClientSid        *int64     `protobuf:"varint,1,opt" json:"ClientSid,omitempty"`
+	SrvRoutes        []*SrvInfo `protobuf:"bytes,2,rep" json:"SrvRoutes,omitempty"`
+	PacketId         *int32     `protobuf:"varint,3,req" json:"PacketId,omitempty"`
+	Data             []byte     `protobuf:"bytes,4,req" json:"Data,omitempty"`
+	XXX_unrecognized []byte     `json:"-"`
 }
 
 func (m *SSPacketRedirect) Reset()         { *m = SSPacketRedirect{} }
 func (m *SSPacketRedirect) String() string { return proto.CompactTextString(m) }
 func (*SSPacketRedirect) ProtoMessage()    {}
-
-const Default_SSPacketRedirect_PacketId SrvlibPacketID = SrvlibPacketID_PACKET_SS_REDIRECT
-
-func (m *SSPacketRedirect) GetPacketId() SrvlibPacketID {
-	if m != nil && m.PacketId != nil {
-		return *m.PacketId
-	}
-	return Default_SSPacketRedirect_PacketId
-}
 
 func (m *SSPacketRedirect) GetClientSid() int64 {
 	if m != nil && m.ClientSid != nil {
@@ -46,6 +37,13 @@ func (m *SSPacketRedirect) GetSrvRoutes() []*SrvInfo {
 		return m.SrvRoutes
 	}
 	return nil
+}
+
+func (m *SSPacketRedirect) GetPacketId() int32 {
+	if m != nil && m.PacketId != nil {
+		return *m.PacketId
+	}
+	return 0
 }
 
 func (m *SSPacketRedirect) GetData() []byte {

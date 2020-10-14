@@ -13,21 +13,24 @@ type SessionHandlerCreator func() SessionHandler
 type SessionHandler interface {
 	GetName() string
 	GetInterestOps() uint
-	OnSessionOpened(s *Session)                                    //run in main goroutine
-	OnSessionClosed(s *Session)                                    //run in main goroutine
-	OnSessionIdle(s *Session)                                      //run in main goroutine
-	OnPacketReceived(s *Session, packetid int, packet interface{}) //run in session receive goroutine
-	OnPacketSent(s *Session, data []byte)                          //run in session send goroutine
+	OnSessionOpened(s *Session)                                                    //run in main goroutine
+	OnSessionClosed(s *Session)                                                    //run in main goroutine
+	OnSessionIdle(s *Session)                                                      //run in main goroutine
+	OnPacketReceived(s *Session, packetid int, logicNo uint32, packet interface{}) //run in session receive goroutine
+	OnPacketSent(s *Session, packetid int, logicNo uint32, data []byte)            //run in session send goroutine
 }
 
 type BasicSessionHandler struct {
 }
 
-func (bsh *BasicSessionHandler) OnSessionOpened(s *Session)                                    {}
-func (bsh *BasicSessionHandler) OnSessionClosed(s *Session)                                    {}
-func (bsh *BasicSessionHandler) OnSessionIdle(s *Session)                                      {}
-func (bsh *BasicSessionHandler) OnPacketReceived(s *Session, packetid int, packet interface{}) {}
-func (bsh *BasicSessionHandler) OnPacketSent(s *Session, data []byte)                          {}
+func (bsh *BasicSessionHandler) GetName() string            { return "BasicSessionHandler" }
+func (bsh *BasicSessionHandler) GetInterestOps() uint       { return 0 }
+func (bsh *BasicSessionHandler) OnSessionOpened(s *Session) {}
+func (bsh *BasicSessionHandler) OnSessionClosed(s *Session) {}
+func (bsh *BasicSessionHandler) OnSessionIdle(s *Session)   {}
+func (bsh *BasicSessionHandler) OnPacketReceived(s *Session, packetid int, logicNo uint32, packet interface{}) {
+}
+func (bsh *BasicSessionHandler) OnPacketSent(s *Session, packetid int, logicNo uint32, data []byte) {}
 
 type SessionHandlerChain struct {
 	handlers            *list.List
@@ -101,20 +104,20 @@ func (shc *SessionHandlerChain) OnSessionIdle(s *Session) {
 	}
 }
 
-func (shc *SessionHandlerChain) OnPacketReceived(s *Session, packetid int, packet interface{}) {
+func (shc *SessionHandlerChain) OnPacketReceived(s *Session, packetid int, logicNo uint32, packet interface{}) {
 	for e := shc.handlersInterestOps[InterestOps_Received].Front(); e != nil; e = e.Next() {
 		sh := e.Value.(SessionHandler)
 		if sh != nil {
-			sh.OnPacketReceived(s, packetid, packet)
+			sh.OnPacketReceived(s, packetid, logicNo, packet)
 		}
 	}
 }
 
-func (shc *SessionHandlerChain) OnPacketSent(s *Session, data []byte) {
+func (shc *SessionHandlerChain) OnPacketSent(s *Session, packetid int, logicNo uint32, data []byte) {
 	for e := shc.handlersInterestOps[InterestOps_Sent].Front(); e != nil; e = e.Next() {
 		sh := e.Value.(SessionHandler)
 		if sh != nil {
-			sh.OnPacketSent(s, data)
+			sh.OnPacketSent(s, packetid, logicNo, data)
 		}
 	}
 }

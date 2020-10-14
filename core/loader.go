@@ -1,7 +1,6 @@
 package core
 
 import (
-	"bytes"
 	"encoding/json"
 	"io"
 	"io/ioutil"
@@ -15,64 +14,79 @@ type Package interface {
 	Init() error
 	io.Closer
 }
+type ConfigFileEncryptorHook interface {
+	IsCipherText([]byte) bool
+	Encrypt([]byte) []byte
+	Decrtypt([]byte) []byte
+}
 
 var packages = make(map[string]Package)
+var packagesLoaded = make(map[string]bool)
+var configFileEH ConfigFileEncryptorHook
 
 func RegistePackage(p Package) {
 	packages[p.Name()] = p
 }
 
-func LoadPackages(configFile string) {
-	data, err := ioutil.ReadFile(configFile)
-	if err != nil {
-		logger.Errorf("Error while reading config file %s: %s", configFile, err)
+func IsPackageRegisted(name string) bool {
+	if _, exist := packages[name]; exist {
+		return true
 	}
+	return false
+}
 
+func IsPackageLoaded(name string) bool {
+	if _, exist := packagesLoaded[name]; exist {
+		return true
+	}
+	return false
+}
+func RegisterConfigEncryptor(h ConfigFileEncryptorHook) {
+	configFileEH = h
+}
+func LoadPackages(configFile string) {
+	//logger.Logger.Infof("Build time is: %s", BuildTime())
 	switch path.Ext(configFile) {
 	case ".json":
-		// Compact JSON to make it easier to extract JSON per package
-		var buf bytes.Buffer
-		err = json.Compact(&buf, data)
+		fileBuff, err := ioutil.ReadFile(configFile)
 		if err != nil {
-			logger.Errorf("Error in JSON config file %s: %s", configFile, err)
+			logger.Logger.Errorf("Error while reading config file %s: %s", configFile, err)
+			break
 		}
-		data = buf.Bytes()
-
-		// Unmarshal packages /*in given order*/
-		for _, pkg := range packages {
-			// Extract JSON only for this package
-			key := []byte(`"` + pkg.Name() + `":{`)
-			begin := bytes.Index(data, key)
-			if begin != -1 {
-				begin += len(key) - 1
-				end := 0
-				braceCounter := 0
-				for i := begin; i < len(data); i++ {
-					switch data[i] {
-					case '{':
-						braceCounter++
-					case '}':
-						braceCounter--
-					}
-					if braceCounter == 0 {
-						end = i + 1
-						break
-					}
-				}
-
-				err = json.Unmarshal(data[begin:end], pkg)
-				if err != nil {
-					logger.Errorf("Error while unmarshalling JSON from config file %s: %s", configFile, err)
-				}
+		if configFileEH != nil {
+			if configFileEH.IsCipherText(fileBuff) {
+				fileBuff = configFileEH.Decrtypt(fileBuff)
 			}
-			err := pkg.Init()
-			if err != nil {
-				logger.Errorf("Error while initializing package %s: %s", pkg.Name(), err)
+		}
+		var fileData interface{}
+		err = json.Unmarshal(fileBuff, &fileData)
+		if err != nil {
+			break
+		}
+		fileMap := fileData.(map[string]interface{})
+		for name, pkg := range packages {
+			if moduleData, ok := fileMap[name]; ok {
+				if data, ok := moduleData.(map[string]interface{}); ok {
+					modelBuff, _ := json.Marshal(data)
+					err = json.Unmarshal(modelBuff, &pkg)
+					if err != nil {
+						logger.Logger.Errorf("Error while unmarshalling JSON from config file %s: %s", configFile, err)
+					} else {
+						err = pkg.Init()
+						if err != nil {
+							logger.Logger.Errorf("Error while initializing package %s: %s", pkg.Name(), err)
+						} else {
+							packagesLoaded[pkg.Name()] = true
+							logger.Logger.Infof("package [%16s] load success", pkg.Name())
+						}
+					}
+				} else {
+					logger.Logger.Errorf("Package %v init data unmarshal failed.", pkg.Name())
+				}
 			} else {
-				logger.Info("module [", pkg.Name(), "] load success")
+				logger.Logger.Errorf("Package %v init data not exist.", pkg.Name())
 			}
 		}
-
 	default:
 		panic("Unsupported config file: " + configFile)
 	}
@@ -82,7 +96,7 @@ func ClosePackages() {
 	for _, pkg := range packages {
 		err := pkg.Close()
 		if err != nil {
-			logger.Errorf("Error while closing package %s: %s", pkg.Name(), err)
+			logger.Logger.Errorf("Error while closing package %s: %s", pkg.Name(), err)
 		}
 	}
 }

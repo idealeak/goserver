@@ -42,11 +42,11 @@ func (ctf *ConnectionThrottleFilter) OnSessionIdle(s *netlib.Session) bool {
 	return true
 }
 
-func (ctf *ConnectionThrottleFilter) OnPacketReceived(s *netlib.Session, packetid int, packet interface{}) bool {
+func (ctf *ConnectionThrottleFilter) OnPacketReceived(s *netlib.Session, packetid int, logicNo uint32, packet interface{}) bool {
 	return true
 }
 
-func (ctf *ConnectionThrottleFilter) OnPacketSent(s *netlib.Session, data []byte) bool {
+func (ctf *ConnectionThrottleFilter) OnPacketSent(s *netlib.Session, packetid int, logicNo uint32, data []byte) bool {
 	return true
 }
 

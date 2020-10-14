@@ -2,6 +2,8 @@ package utils
 
 import (
 	"fmt"
+	"github.com/idealeak/goserver/core/logger"
+	"runtime"
 	"time"
 )
 
@@ -53,4 +55,39 @@ func ToS(d time.Duration) string {
 		}
 	}
 
+}
+
+func CatchPanic(f func()) (err interface{}) {
+	defer func() {
+		err = recover()
+		if err != nil {
+			logger.Logger.Warnf("%s panic: %s", f, err)
+			var buf [4096]byte
+			n := runtime.Stack(buf[:], false)
+			logger.Logger.Error("stack--->", string(buf[:n]))
+		}
+	}()
+	f()
+	return
+}
+
+func RunPanicless(f func()) (panicless bool) {
+	defer func() {
+		err := recover()
+		panicless = err == nil
+		if err != nil {
+			logger.Logger.Warnf("%s panic: %s", f, err)
+			var buf [4096]byte
+			n := runtime.Stack(buf[:], false)
+			logger.Logger.Error("stack--->", string(buf[:n]))
+		}
+	}()
+
+	f()
+	return
+}
+
+func RepeatUntilPanicless(f func()) {
+	for !RunPanicless(f) {
+	}
 }

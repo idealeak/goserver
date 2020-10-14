@@ -1,10 +1,8 @@
 package protocol;
 
-import "protocol/packetid.proto";
-
 message SSPacketMulticast {
-	required SrvlibPacketID PacketId = 1 [default=PACKET_SS_MULTICAST];
-	repeated MCSessionUnion Sessions = 2;
+	repeated MCSessionUnion Sessions = 1;
+	required int32 PacketId = 2;
 	required bytes Data = 3;
 }
 

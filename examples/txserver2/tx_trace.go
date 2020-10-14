@@ -18,7 +18,7 @@ func init() {
 }
 
 func (this *traceTransHandler) OnExcute(tNode *transact.TransNode, ud interface{}) transact.TransExeResult {
-	logger.Trace("traceTransHandler.OnExcute ")
+	logger.Logger.Trace("traceTransHandler.OnExcute ")
 	tnp := &transact.TransNodeParam{
 		Tt:     protocol.TxTrace,
 		Ot:     transact.TransOwnerType(2),
@@ -34,17 +34,17 @@ func (this *traceTransHandler) OnExcute(tNode *transact.TransNode, ud interface{
 }
 
 func (this *traceTransHandler) OnCommit(tNode *transact.TransNode) transact.TransExeResult {
-	logger.Trace("traceTransHandler.OnCommit ")
+	logger.Logger.Trace("traceTransHandler.OnCommit ")
 	return transact.TransExeResult_Success
 }
 
 func (this *traceTransHandler) OnRollBack(tNode *transact.TransNode) transact.TransExeResult {
-	logger.Trace("traceTransHandler.OnRollBack ")
+	logger.Logger.Trace("traceTransHandler.OnRollBack ")
 	return transact.TransExeResult_Success
 }
 
 func (this *traceTransHandler) OnChildTransRep(tNode *transact.TransNode, hChild transact.TransNodeID, retCode int, ud interface{}) transact.TransExeResult {
-	logger.Trace("traceTransHandler.OnChildTransRep ")
+	logger.Logger.Trace("traceTransHandler.OnChildTransRep ")
 	return transact.TransExeResult_Success
 }
 
@@ -52,7 +52,7 @@ type MyServerSessionRegisteListener struct {
 }
 
 func (mssrl *MyServerSessionRegisteListener) OnRegiste(*netlib.Session) {
-	logger.Trace("MyServerSessionRegisteListener.OnRegiste")
+	logger.Logger.Trace("MyServerSessionRegisteListener.OnRegiste")
 	tnp := &transact.TransNodeParam{
 		Tt:     protocol.TxTrace,
 		Ot:     transact.TransOwnerType(2),
@@ -67,5 +67,5 @@ func (mssrl *MyServerSessionRegisteListener) OnRegiste(*netlib.Session) {
 }
 
 func (mssrl *MyServerSessionRegisteListener) OnUnregiste(*netlib.Session) {
-	logger.Trace("MyServerSessionRegisteListener.OnUnregiste")
+	logger.Logger.Trace("MyServerSessionRegisteListener.OnUnregiste")
 }

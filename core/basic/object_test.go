@@ -44,7 +44,6 @@ func TestSendCommand(t *testing.T) {
 		t.Fatal("Command be droped")
 	}
 	fmt.Println("TestSendCommand", slice)
-	fmt.Println("TestSendCommand", len(o.que), "cap", cap(o.que))
 }
 
 func TestSendCommandLoop(t *testing.T) {
@@ -90,5 +89,4 @@ func TestSendCommandLoop(t *testing.T) {
 		t.Fatal("Command be droped")
 	}
 	fmt.Println("TestSendCommandLoop", slice, len(slice))
-	fmt.Println("TestSendCommandLoop", len(o.que), "cap", cap(o.que))
 }

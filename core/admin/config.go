@@ -10,6 +10,7 @@ type Configuration struct {
 	SupportAdmin  bool
 	AdminHttpAddr string
 	AdminHttpPort int
+	WhiteHttpAddr []string
 }
 
 func (c *Configuration) Name() string {

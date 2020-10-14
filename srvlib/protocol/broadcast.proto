@@ -1,10 +1,8 @@
 package protocol;
 
-import "protocol/packetid.proto";
-
 message SSPacketBroadcast {
-	required SrvlibPacketID PacketId = 1 [default=PACKET_SS_BROADCAST];
-	required BCSessionUnion SessParam = 2;
+	required BCSessionUnion SessParam = 1;
+	required int32 PacketId = 2;
 	required bytes Data = 3;
 }
 

@@ -18,14 +18,14 @@ type recyclerMgr struct {
 
 func (this *recyclerMgr) registe(r *Recycler) {
 	this.lock.Lock()
-	defer this.lock.Unlock()
 	this.recyclers[r] = r
+	this.lock.Unlock()
 }
 
 func (this *recyclerMgr) unregiste(r *Recycler) {
 	this.lock.Lock()
-	defer this.lock.Unlock()
 	delete(this.recyclers, r)
+	this.lock.Unlock()
 }
 
 func (this *recyclerMgr) CloseAll() {
@@ -38,9 +38,8 @@ func (this *recyclerMgr) CloseAll() {
 
 func (this *recyclerMgr) Dump(w io.Writer) {
 	this.lock.Lock()
-	defer this.lock.Unlock()
-
 	for _, r := range this.recyclers {
 		w.Write([]byte(fmt.Sprintf("(%s) alloc object (%d)", r.name, r.makecnt)))
 	}
+	this.lock.Unlock()
 }

@@ -14,26 +14,16 @@ var _ = &json.SyntaxError{}
 var _ = math.Inf
 
 type SSPacketSlices struct {
-	PacketId         *CoreBuiltinPacketID `protobuf:"varint,1,req,enum=protocol.CoreBuiltinPacketID,def=-1003" json:"PacketId,omitempty"`
-	SeqNo            *int32               `protobuf:"varint,2,req" json:"SeqNo,omitempty"`
-	TotalSize        *int32               `protobuf:"varint,3,req" json:"TotalSize,omitempty"`
-	Offset           *int32               `protobuf:"varint,4,req" json:"Offset,omitempty"`
-	PacketData       []byte               `protobuf:"bytes,5,req" json:"PacketData,omitempty"`
-	XXX_unrecognized []byte               `json:"-"`
+	SeqNo            *int32 `protobuf:"varint,1,req" json:"SeqNo,omitempty"`
+	TotalSize        *int32 `protobuf:"varint,2,req" json:"TotalSize,omitempty"`
+	Offset           *int32 `protobuf:"varint,3,req" json:"Offset,omitempty"`
+	PacketData       []byte `protobuf:"bytes,4,req" json:"PacketData,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
 }
 
 func (m *SSPacketSlices) Reset()         { *m = SSPacketSlices{} }
 func (m *SSPacketSlices) String() string { return proto.CompactTextString(m) }
 func (*SSPacketSlices) ProtoMessage()    {}
-
-const Default_SSPacketSlices_PacketId CoreBuiltinPacketID = CoreBuiltinPacketID_PACKET_SS_SLICES
-
-func (m *SSPacketSlices) GetPacketId() CoreBuiltinPacketID {
-	if m != nil && m.PacketId != nil {
-		return *m.PacketId
-	}
-	return Default_SSPacketSlices_PacketId
-}
 
 func (m *SSPacketSlices) GetSeqNo() int32 {
 	if m != nil && m.SeqNo != nil {

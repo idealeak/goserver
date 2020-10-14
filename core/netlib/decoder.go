@@ -1,47 +1,41 @@
 package netlib
 
 import (
-	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
+	"sync/atomic"
 )
 
 var (
 	DefaultProtocoDecoderName = "default-protocol-decoder"
-	SessionAttributeRcvBuf    = &RWBuffer{}
 	protocolDecoders          = make(map[string]ProtocolDecoder)
+	ErrRcvBufCannotGet        = errors.New("Session rcvbuf get failed")
 )
 
 type ProtocolDecoder interface {
-	Decode(s *Session, r io.Reader) (packetid int, packet interface{}, err error, raw []byte)
+	Decode(s *Session, r io.Reader) (packetid int, logicNo uint32, packet interface{}, err error, raw []byte)
 	FinishDecode(s *Session)
 }
 
 type DefaultProtocolDecoder struct {
 }
 
-func (pdi *DefaultProtocolDecoder) Decode(s *Session, r io.Reader) (packetid int, packet interface{}, err error, raw []byte) {
-	attr := s.GetAttribute(SessionAttributeRcvBuf)
-	if attr == nil {
-		attr = AllocRWBuf()
-		s.SetAttribute(SessionAttributeRcvBuf, attr)
+func (pdi *DefaultProtocolDecoder) Decode(s *Session, r io.Reader) (packetid int, logicNo uint32, packet interface{}, err error, raw []byte) {
+	if s.rcvbuf == nil {
+		s.rcvbuf = AllocRWBuf()
 	}
-	if attr == nil {
-		err = errors.New("Session rdbuf set failed")
+	rdbuf := s.rcvbuf
+	if rdbuf == nil {
+		err = ErrRcvBufCannotGet
+		return
+	}
+	err = binary.Read(r, binary.LittleEndian, &rdbuf.pheader)
+	if err != nil {
 		return
 	}
 
-	rdbuf := attr.(*RWBuffer)
-	_, err = io.ReadFull(r, rdbuf.buf[:LenOfProtoHeader])
-	if err != nil {
-		return
-	}
-	err = binary.Read(bytes.NewBuffer(rdbuf.buf[:LenOfProtoHeader]), binary.LittleEndian, &rdbuf.pheader)
-	if err != nil {
-		return
-	}
 	if int(rdbuf.pheader.Len) > MaxPacketSize {
 		err = fmt.Errorf("PacketHeader len exceed MaxPacket. get %v limit %v", rdbuf.pheader.Len, MaxPacketSize)
 		return
@@ -51,6 +45,7 @@ func (pdi *DefaultProtocolDecoder) Decode(s *Session, r io.Reader) (packetid int
 		return
 	}
 	rdbuf.seq++
+	logicNo = rdbuf.pheader.LogicNo
 	_, err = io.ReadFull(r, rdbuf.buf[0:rdbuf.pheader.Len])
 	if err != nil {
 		return
@@ -60,13 +55,16 @@ func (pdi *DefaultProtocolDecoder) Decode(s *Session, r io.Reader) (packetid int
 	if err != nil {
 		return
 	}
+
+	atomic.AddInt64(&s.recvedBytes, int64(int(rdbuf.pheader.Len)+LenOfProtoHeader))
+	atomic.AddInt64(&s.recvedPack, 1)
 	return
 }
 
 func (pdi *DefaultProtocolDecoder) FinishDecode(s *Session) {
-	attr := s.GetAttribute(SessionAttributeRcvBuf)
-	if attr != nil {
-		FreeRWBuf(attr.(*RWBuffer))
+	if s.rcvbuf != nil {
+		FreeRWBuf(s.rcvbuf)
+		s.rcvbuf = nil
 	}
 }
 

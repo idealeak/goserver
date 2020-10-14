@@ -3,6 +3,7 @@ package transact
 
 import (
 	"github.com/idealeak/goserver/core"
+	"github.com/idealeak/goserver/core/logger"
 )
 
 var Config = Configuration{}
@@ -19,6 +20,9 @@ func (this *Configuration) Name() string {
 func (this *Configuration) Init() error {
 	if this.TxSkeletonName != "" {
 		this.tcs = GetTxCommSkeleton(this.TxSkeletonName)
+		if this.tcs == nil {
+			logger.Logger.Warnf("%v TxSkeletonName not registed!!!", this.TxSkeletonName)
+		}
 	}
 	return nil
 }

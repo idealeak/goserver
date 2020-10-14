@@ -14,23 +14,13 @@ var _ = &json.SyntaxError{}
 var _ = math.Inf
 
 type SSPacketKeepAlive struct {
-	PacketId         *CoreBuiltinPacketID `protobuf:"varint,1,req,enum=protocol.CoreBuiltinPacketID,def=-1005" json:"PacketId,omitempty"`
-	Flag             *int32               `protobuf:"varint,2,req" json:"Flag,omitempty"`
-	XXX_unrecognized []byte               `json:"-"`
+	Flag             *int32 `protobuf:"varint,1,req" json:"Flag,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
 }
 
 func (m *SSPacketKeepAlive) Reset()         { *m = SSPacketKeepAlive{} }
 func (m *SSPacketKeepAlive) String() string { return proto.CompactTextString(m) }
 func (*SSPacketKeepAlive) ProtoMessage()    {}
-
-const Default_SSPacketKeepAlive_PacketId CoreBuiltinPacketID = CoreBuiltinPacketID_PACKET_SS_KEEPALIVE
-
-func (m *SSPacketKeepAlive) GetPacketId() CoreBuiltinPacketID {
-	if m != nil && m.PacketId != nil {
-		return *m.PacketId
-	}
-	return Default_SSPacketKeepAlive_PacketId
-}
 
 func (m *SSPacketKeepAlive) GetFlag() int32 {
 	if m != nil && m.Flag != nil {

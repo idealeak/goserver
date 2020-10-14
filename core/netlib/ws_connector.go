@@ -2,27 +2,30 @@
 package netlib
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/idealeak/goserver/core/logger"
 	"github.com/idealeak/goserver/core/utils"
+	"sync/atomic"
 )
 
 type WsConnector struct {
-	sc        *SessionConfig
-	e         *NetEngine
-	s         *WsSession
-	idGen     utils.IdGen
-	connChan  chan *websocket.Conn
-	reaper    chan ISession
-	waitor    *utils.Waitor
-	dialer    websocket.Dialer
-	quit      bool
-	reaped    bool
-	maxActive int
-	maxDone   int
+	sc         *SessionConfig
+	e          *NetEngine
+	s          *WsSession
+	idGen      utils.IdGen
+	connChan   chan *websocket.Conn
+	reaper     chan ISession
+	waitor     *utils.Waitor
+	dialer     websocket.Dialer
+	createTime time.Time
+	quit       bool
+	reaped     bool
+	maxActive  int
+	maxDone    int
 }
 
 func newWsConnector(e *NetEngine, sc *SessionConfig) *WsConnector {
@@ -32,11 +35,12 @@ func newWsConnector(e *NetEngine, sc *SessionConfig) *WsConnector {
 		s:        nil,
 		connChan: make(chan *websocket.Conn, 2),
 		reaper:   make(chan ISession, 1),
-		waitor:   utils.NewWaitor(),
+		waitor:   utils.NewWaitor("netlib.WsConnector"),
 		dialer: websocket.Dialer{
 			ReadBufferSize:  sc.RcvBuff,
 			WriteBufferSize: sc.SndBuff,
 		},
+		createTime: time.Now(),
 	}
 
 	ConnectorMgr.registeConnector(c)
@@ -44,11 +48,11 @@ func newWsConnector(e *NetEngine, sc *SessionConfig) *WsConnector {
 }
 
 func (c *WsConnector) connectRoutine() {
-
-	c.waitor.Add(1)
-	defer c.waitor.Done()
-
-	service := "ws://" + c.sc.Ip + ":" + strconv.Itoa(int(c.sc.Port)) + c.sc.Path
+	name := fmt.Sprintf("WsConnector.connectRoutine(%v_%v)", c.sc.Name, c.sc.Id)
+	c.waitor.Add(name, 1)
+	defer c.waitor.Done(name)
+	//ws
+	service := c.sc.Protocol + "://" + c.sc.Ip + ":" + strconv.Itoa(int(c.sc.Port)) + c.sc.Path
 	conn, _, err := c.dialer.Dial(service, nil)
 	if err == nil {
 		c.connChan <- conn
@@ -99,27 +103,33 @@ func (c *WsConnector) shutdown() {
 func (c *WsConnector) procActive() {
 	var i int
 	var doneCnt int
-	if c.s != nil && c.s.IsConned() {
-		for i = 0; i < c.sc.MaxDone; i++ {
-			if len(c.s.recvBuffer) > 0 {
-				data, ok := <-c.s.recvBuffer
-				if !ok {
-					break
+	if c.s == nil {
+		return
+	} else if c.s != nil && c.s.IsConned() {
+		if len(c.s.recvBuffer) > 0 {
+			for i = 0; i < c.sc.MaxDone; i++ {
+				select {
+				case data, ok := <-c.s.recvBuffer:
+					if !ok {
+						goto NEXT
+					}
+					data.do()
+					doneCnt++
+				default:
+					goto NEXT
 				}
-				data.do()
-				doneCnt++
 			}
 		}
 	}
-
+NEXT:
 	if doneCnt > c.maxDone {
 		c.maxDone = doneCnt
 	}
 }
 
 func (c *WsConnector) dump() {
-	logger.Info("=========wsconnector dump maxDone=", c.maxDone)
-	logger.Info("=========wssession recvBuffer size=", len(c.s.recvBuffer), " sendBuffer size=", len(c.s.sendBuffer))
+	logger.Logger.Info("=========wsconnector dump maxDone=", c.maxDone)
+	logger.Logger.Info("=========wssession recvBuffer size=", len(c.s.recvBuffer), " sendBuffer size=", len(c.s.sendBuffer))
 }
 
 func (c *WsConnector) procChanEvent() {
@@ -175,7 +185,7 @@ func (c *WsConnector) reapRoutine() {
 
 	c.reaped = true
 
-	c.waitor.Wait()
+	c.waitor.Wait(fmt.Sprintf("WsConnector.reapRoutine_%v", c.sc.Id))
 	select {
 	case conn := <-c.connChan:
 		conn.Close()
@@ -187,4 +197,35 @@ func (c *WsConnector) reapRoutine() {
 
 func (c *WsConnector) GetSessionConfig() *SessionConfig {
 	return c.sc
+}
+
+func (c *WsConnector) stats() ServiceStats {
+	tNow := time.Now()
+	stats := ServiceStats{
+		Id:          c.sc.Id,
+		Type:        c.sc.Type,
+		Name:        c.sc.Name,
+		MaxActive:   1,
+		MaxDone:     c.maxDone,
+		Addr:        c.sc.Protocol + "://" + c.sc.Ip + ":" + strconv.Itoa(int(c.sc.Port)) + c.sc.Path,
+		RunningTime: int64(tNow.Sub(c.createTime) / time.Second),
+	}
+
+	if c.s != nil {
+		stats.SessionStats = []SessionStats{
+			{
+				Id:           c.s.Id,
+				GroupId:      c.s.GroupId,
+				SendedBytes:  atomic.LoadInt64(&c.s.sendedBytes),
+				RecvedBytes:  atomic.LoadInt64(&c.s.recvedBytes),
+				SendedPack:   atomic.LoadInt64(&c.s.sendedPack),
+				RecvedPack:   atomic.LoadInt64(&c.s.recvedPack),
+				PendSendPack: len(c.s.sendBuffer),
+				PendRecvPack: len(c.s.recvBuffer),
+				RemoteAddr:   c.s.RemoteAddr(),
+				RunningTime:  int64(tNow.Sub(c.s.createTime) / time.Second),
+			},
+		}
+	}
+	return stats
 }

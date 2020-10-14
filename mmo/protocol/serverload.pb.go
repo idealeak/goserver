@@ -14,25 +14,15 @@ var _ = &json.SyntaxError{}
 var _ = math.Inf
 
 type ServerLoad struct {
-	PacketId         *MmoPacketID `protobuf:"varint,1,req,enum=protocol.MmoPacketID,def=1000" json:"PacketId,omitempty"`
-	SrvType          *int32       `protobuf:"varint,2,req" json:"SrvType,omitempty"`
-	SrvId            *int32       `protobuf:"varint,3,req" json:"SrvId,omitempty"`
-	CurLoad          *int32       `protobuf:"varint,4,req" json:"CurLoad,omitempty"`
-	XXX_unrecognized []byte       `json:"-"`
+	SrvType          *int32 `protobuf:"varint,1,req" json:"SrvType,omitempty"`
+	SrvId            *int32 `protobuf:"varint,2,req" json:"SrvId,omitempty"`
+	CurLoad          *int32 `protobuf:"varint,3,req" json:"CurLoad,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
 }
 
 func (m *ServerLoad) Reset()         { *m = ServerLoad{} }
 func (m *ServerLoad) String() string { return proto.CompactTextString(m) }
 func (*ServerLoad) ProtoMessage()    {}
-
-const Default_ServerLoad_PacketId MmoPacketID = MmoPacketID_PACKET_GB_CUR_LOAD
-
-func (m *ServerLoad) GetPacketId() MmoPacketID {
-	if m != nil && m.PacketId != nil {
-		return *m.PacketId
-	}
-	return Default_ServerLoad_PacketId
-}
 
 func (m *ServerLoad) GetSrvType() int32 {
 	if m != nil && m.SrvType != nil {
@@ -56,24 +46,14 @@ func (m *ServerLoad) GetCurLoad() int32 {
 }
 
 type ServerStateSwitch struct {
-	PacketId         *MmoPacketID `protobuf:"varint,1,req,enum=protocol.MmoPacketID,def=1001" json:"PacketId,omitempty"`
-	SrvType          *int32       `protobuf:"varint,2,req" json:"SrvType,omitempty"`
-	SrvId            *int32       `protobuf:"varint,3,req" json:"SrvId,omitempty"`
-	XXX_unrecognized []byte       `json:"-"`
+	SrvType          *int32 `protobuf:"varint,1,req" json:"SrvType,omitempty"`
+	SrvId            *int32 `protobuf:"varint,2,req" json:"SrvId,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
 }
 
 func (m *ServerStateSwitch) Reset()         { *m = ServerStateSwitch{} }
 func (m *ServerStateSwitch) String() string { return proto.CompactTextString(m) }
 func (*ServerStateSwitch) ProtoMessage()    {}
-
-const Default_ServerStateSwitch_PacketId MmoPacketID = MmoPacketID_PACKET_GB_STATE_SWITCH
-
-func (m *ServerStateSwitch) GetPacketId() MmoPacketID {
-	if m != nil && m.PacketId != nil {
-		return *m.PacketId
-	}
-	return Default_ServerStateSwitch_PacketId
-}
 
 func (m *ServerStateSwitch) GetSrvType() int32 {
 	if m != nil && m.SrvType != nil {

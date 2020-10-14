@@ -12,9 +12,11 @@ type taskExeCommand struct {
 func (ttc *taskExeCommand) Done(o *basic.Object) error {
 	defer o.ProcessSeqnum()
 	defer utils.DumpStackIfPanic("taskExeCommand")
-	return ttc.t.run()
+	ttc.t.afterQueCnt = o.GetPendingCommandCnt()
+	return ttc.t.run(o)
 }
 
 func SendTaskExe(o *basic.Object, t *Task) bool {
+	t.beforeQueCnt = o.GetPendingCommandCnt()
 	return o.SendCommand(&taskExeCommand{t: t}, true)
 }

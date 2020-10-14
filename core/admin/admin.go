@@ -71,7 +71,8 @@ func Healthcheck(rw http.ResponseWriter, req *http.Request) {
 // TaskStatus is a http.Handler with running task status (task name, status and the last execution).
 // it's in "/task" pattern in admin module.
 func TaskStatus(rw http.ResponseWriter, req *http.Request) {
-	for tname, tk := range schedule.AdminTaskList {
+	tasks := schedule.GetAllTask()
+	for tname, tk := range tasks {
 		fmt.Fprintf(rw, "%s:%s:%s", tname, tk.GetStatus(), tk.GetPrev().String())
 	}
 }
@@ -87,7 +88,8 @@ func RunTask(rw http.ResponseWriter, req *http.Request) {
 	defer req.ParseForm()
 	taskname := req.Form.Get("taskname")
 	trr := &TaskRunResult{}
-	if t, ok := schedule.AdminTaskList[taskname]; ok {
+	t := schedule.GetTask(taskname)
+	if t != nil {
 		err := t.Run()
 		if err != nil {
 			trr.Code = 1
@@ -117,10 +119,6 @@ func (admin *AdminApp) Route(pattern string, f http.HandlerFunc) {
 // Start AdminApp http server.
 // Its addr is defined in configuration file as adminhttpaddr and adminhttpport.
 func (admin *AdminApp) Start(AdminHttpAddr string, AdminHttpPort int) {
-	if len(schedule.AdminTaskList) > 0 {
-		schedule.StartTask()
-	}
-
 	for p, f := range admin.routers {
 		http.Handle(p, f)
 	}
@@ -128,17 +126,17 @@ func (admin *AdminApp) Start(AdminHttpAddr string, AdminHttpPort int) {
 	addr := fmt.Sprintf("%s:%d", AdminHttpAddr, AdminHttpPort)
 	l, err := net.Listen("tcp", addr)
 	if err != nil {
-		logger.Critical("Admin Listen error: ", err)
+		logger.Logger.Critical("Admin Listen error: ", err)
 		return
 	}
 
-	logger.Infof("Admin Serve: %s", l.Addr())
+	logger.Logger.Infof("Admin Serve: %s", l.Addr())
 
 	go func() {
 		server := &http.Server{}
 		err = server.Serve(l)
 		if err != nil {
-			logger.Critical("Admin Serve: ", err)
+			logger.Logger.Critical("Admin Serve: ", err)
 		}
 	}()
 }
@@ -147,10 +145,10 @@ func init() {
 	MyAdminApp = &AdminApp{
 		routers: make(map[string]http.HandlerFunc),
 	}
-	MyAdminApp.Route("/", AdminIndex)
-	MyAdminApp.Route("/prof", ProfIndex)
-	MyAdminApp.Route("/healthcheck", Healthcheck)
-	MyAdminApp.Route("/task", TaskStatus)
-	MyAdminApp.Route("/runtask", RunTask)
-	MyAdminApp.Route("/listconf", ListConf)
+	//MyAdminApp.Route("/", AdminIndex)
+	//MyAdminApp.Route("/prof", ProfIndex)
+	//MyAdminApp.Route("/healthcheck", Healthcheck)
+	//MyAdminApp.Route("/task", TaskStatus)
+	//MyAdminApp.Route("/runtask", RunTask)
+	//MyAdminApp.Route("/listconf", ListConf)
 }

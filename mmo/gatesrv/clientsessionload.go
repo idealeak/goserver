@@ -13,6 +13,7 @@ var (
 )
 
 type SessionHandlerClientLoad struct {
+	netlib.BasicSessionHandler
 }
 
 func (sfcl SessionHandlerClientLoad) GetName() string {
@@ -29,15 +30,7 @@ func (sfcl *SessionHandlerClientLoad) OnSessionOpened(s *netlib.Session) {
 
 func (sfcl *SessionHandlerClientLoad) OnSessionClosed(s *netlib.Session) {
 	sfcl.reportLoad(s)
-}
 
-func (sfcl *SessionHandlerClientLoad) OnSessionIdle(s *netlib.Session) {
-}
-
-func (sfcl *SessionHandlerClientLoad) OnPacketReceived(s *netlib.Session, packetid int, packet interface{}) {
-}
-
-func (sfcl *SessionHandlerClientLoad) OnPacketSent(s *netlib.Session, data []byte) {
 }
 
 func (sfcl *SessionHandlerClientLoad) reportLoad(s *netlib.Session) {
@@ -48,8 +41,8 @@ func (sfcl *SessionHandlerClientLoad) reportLoad(s *netlib.Session) {
 		CurLoad: proto.Int32(int32(srvlib.ClientSessionMgrSington.Count())),
 	}
 	proto.SetDefaults(pack)
-	srvlib.ServerSessionMgrSington.Broadcast(pack, netlib.Config.SrvInfo.AreaID, srvlib.BalanceServerType)
-	logger.Tracef("SessionHandlerClientLoad.reportLoad %v", pack)
+	srvlib.ServerSessionMgrSington.Broadcast(int(protocol.MmoPacketID_PACKET_SC_GATEINFO), pack, netlib.Config.SrvInfo.AreaID, srvlib.BalanceServerType)
+	logger.Logger.Tracef("SessionHandlerClientLoad.reportLoad %v", pack)
 }
 
 func init() {

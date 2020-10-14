@@ -41,7 +41,7 @@ func (af *AuthenticationFilter) OnSessionOpened(s *netlib.Session) bool {
 			AuthKey:   proto.String(hex.EncodeToString(h.Sum(nil))),
 		}
 		proto.SetDefaults(authPack)
-		s.Send(authPack)
+		s.Send(int(protocol.CoreBuiltinPacketID_PACKET_SS_AUTH), authPack)
 	}
 
 	return true
@@ -55,13 +55,13 @@ func (af *AuthenticationFilter) OnSessionIdle(s *netlib.Session) bool {
 	return true
 }
 
-func (af *AuthenticationFilter) OnPacketReceived(s *netlib.Session, packetid int, packet interface{}) bool {
+func (af *AuthenticationFilter) OnPacketReceived(s *netlib.Session, packetid int, logicNo uint32, packet interface{}) bool {
 	if !s.GetSessionConfig().IsClient {
-		if s.GetAttribute(SessionAttributeAuth) == nil {
+		if !s.Auth {
 			if auth, ok := packet.(*protocol.SSPacketAuth); ok {
 				h := md5.New()
 				rawText := fmt.Sprintf("%v;%v", auth.GetTimestamp(), s.GetSessionConfig().AuthKey)
-				logger.Tracef("AuthenticationFilter rawtext=%v IsInnerLink(%v)", rawText, s.GetSessionConfig().IsInnerLink)
+				logger.Logger.Tracef("AuthenticationFilter rawtext=%v IsInnerLink(%v)", rawText, s.GetSessionConfig().IsInnerLink)
 				h.Write([]byte(rawText))
 				expectKey := hex.EncodeToString(h.Sum(nil))
 				if expectKey != auth.GetAuthKey() {
@@ -69,17 +69,22 @@ func (af *AuthenticationFilter) OnPacketReceived(s *netlib.Session, packetid int
 						af.SessionAuthHandler(s, false)
 					}
 					s.Close()
-					logger.Tracef("AuthenticationFilter AuthKey error[expect:%v get:%v]", expectKey, auth.GetAuthKey())
+					logger.Logger.Tracef("AuthenticationFilter AuthKey error[expect:%v get:%v]", expectKey, auth.GetAuthKey())
 					return false
 				}
-				s.SetAttribute(SessionAttributeAuth, true)
+				s.Auth = true
 				if af.SessionAuthHandler != nil {
 					af.SessionAuthHandler(s, true)
 				}
+
+				//ack 回一个
+				authAck := &protocol.SSPacketAuthAck{Msg: proto.String("ok")}
+				proto.SetDefaults(authAck)
+				s.Send(int(protocol.CoreBuiltinPacketID_PACKET_SS_AUTH_ACK), authAck, false)
 				return false
 			} else {
 				s.Close()
-				logger.Warn("AuthenticationFilter packet not expect")
+				logger.Logger.Warn("AuthenticationFilter packet not expect")
 				return false
 			}
 		}
@@ -87,7 +92,7 @@ func (af *AuthenticationFilter) OnPacketReceived(s *netlib.Session, packetid int
 	return true
 }
 
-func (af *AuthenticationFilter) OnPacketSent(s *netlib.Session, data []byte) bool {
+func (af *AuthenticationFilter) OnPacketSent(s *netlib.Session, packetid int, logicNo uint32, data []byte) bool {
 	return true
 }
 

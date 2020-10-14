@@ -20,6 +20,7 @@ type ServerInfo struct {
 	Type   int
 	Id     int
 	AreaID int
+	Data   string
 	Banner []string
 }
 
@@ -41,10 +42,14 @@ type SessionConfig struct {
 	RcvBuff                int
 	SndBuff                int
 	SoLinger               int
+	MTU                    int
 	WriteTimeout           time.Duration
 	ReadTimeout            time.Duration
 	IdleTimeout            time.Duration
 	KeepAlive              bool
+	KeepAlivePeriod        time.Duration
+	KeepAliveIdle          time.Duration
+	KeepAliveCount         int
 	NoDelay                bool
 	IsClient               bool
 	IsAutoReconn           bool
@@ -55,7 +60,6 @@ type SessionConfig struct {
 	ErrorPacketHandlerName string
 	FilterChain            []string
 	HandlerChain           []string
-	IsKeepAlive            bool
 	SupportFragment        bool
 	AllowMultiConn         bool
 	encoder                ProtocolEncoder
@@ -71,7 +75,7 @@ func (c *Configuration) Name() string {
 
 func (c *Configuration) Init() error {
 	for _, str := range c.SrvInfo.Banner {
-		logger.Info(str)
+		logger.Logger.Info(str)
 	}
 
 	for i := 0; i < len(c.IoServices); i++ {
@@ -124,6 +128,8 @@ func (sc *SessionConfig) Init() {
 		creator := GetErrorPacketHandlerCreator(sc.ErrorPacketHandlerName)
 		if creator != nil {
 			sc.eph = creator()
+		} else {
+			logger.Logger.Warnf("[%v] ErrorPacketHandler not registe", sc.ErrorPacketHandlerName)
 		}
 	}
 	if sc.IdleTimeout <= 0 {
@@ -141,6 +147,9 @@ func (sc *SessionConfig) Init() {
 	} else {
 		sc.ReadTimeout = sc.ReadTimeout * time.Second
 	}
+
+	sc.KeepAlivePeriod *= time.Second
+	sc.KeepAliveIdle *= time.Second
 }
 
 func (sc *SessionConfig) GetFilter(name string) SessionFilter {

@@ -14,26 +14,17 @@ var _ = &json.SyntaxError{}
 var _ = math.Inf
 
 type SSPacketTransit struct {
-	PacketId         *SrvlibPacketID `protobuf:"varint,1,req,enum=protocol.SrvlibPacketID,def=-2003" json:"PacketId,omitempty"`
-	SArea            *int32          `protobuf:"varint,2,req" json:"SArea,omitempty"`
-	SType            *int32          `protobuf:"varint,3,req" json:"SType,omitempty"`
-	SId              *int32          `protobuf:"varint,4,req" json:"SId,omitempty"`
-	Data             []byte          `protobuf:"bytes,5,req" json:"Data,omitempty"`
-	XXX_unrecognized []byte          `json:"-"`
+	SArea            *int32 `protobuf:"varint,1,req" json:"SArea,omitempty"`
+	SType            *int32 `protobuf:"varint,2,req" json:"SType,omitempty"`
+	SId              *int32 `protobuf:"varint,3,req" json:"SId,omitempty"`
+	PacketId         *int32 `protobuf:"varint,4,req" json:"PacketId,omitempty"`
+	Data             []byte `protobuf:"bytes,5,req" json:"Data,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
 }
 
 func (m *SSPacketTransit) Reset()         { *m = SSPacketTransit{} }
 func (m *SSPacketTransit) String() string { return proto.CompactTextString(m) }
 func (*SSPacketTransit) ProtoMessage()    {}
-
-const Default_SSPacketTransit_PacketId SrvlibPacketID = SrvlibPacketID_PACKET_SS_TRANSIT
-
-func (m *SSPacketTransit) GetPacketId() SrvlibPacketID {
-	if m != nil && m.PacketId != nil {
-		return *m.PacketId
-	}
-	return Default_SSPacketTransit_PacketId
-}
 
 func (m *SSPacketTransit) GetSArea() int32 {
 	if m != nil && m.SArea != nil {
@@ -52,6 +43,13 @@ func (m *SSPacketTransit) GetSType() int32 {
 func (m *SSPacketTransit) GetSId() int32 {
 	if m != nil && m.SId != nil {
 		return *m.SId
+	}
+	return 0
+}
+
+func (m *SSPacketTransit) GetPacketId() int32 {
+	if m != nil && m.PacketId != nil {
+		return *m.PacketId
 	}
 	return 0
 }

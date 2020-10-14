@@ -1,16 +1,12 @@
 package protocol;
 
-import "protocol/packetid.proto";
-
 message ServerLoad {
-	required MmoPacketID PacketId = 1 [default=PACKET_GB_CUR_LOAD];
-	required int32 SrvType = 2;
-	required int32 SrvId = 3;
-	required int32 CurLoad = 4;
+	required int32 SrvType = 1;
+	required int32 SrvId = 2;
+	required int32 CurLoad = 3;
 }
 
 message ServerStateSwitch {
-	required MmoPacketID PacketId = 1 [default=PACKET_GB_STATE_SWITCH];
-	required int32 SrvType = 2;
-	required int32 SrvId = 3;
+	required int32 SrvType = 1;
+	required int32 SrvId = 2;
 }

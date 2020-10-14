@@ -6,7 +6,6 @@ import (
 
 	"code.google.com/p/goprotobuf/proto"
 	"github.com/idealeak/goserver/core/builtin/protocol"
-	"github.com/idealeak/goserver/core/logger"
 	"github.com/idealeak/goserver/core/netlib"
 	"github.com/idealeak/goserver/core/transact"
 )
@@ -22,8 +21,8 @@ func (this *TxCtrlCmdPacketFactory) CreatePacket() interface{} {
 	return pack
 }
 
-func (this *TxCtrlCmdHandler) Process(session *netlib.Session, data interface{}) error {
-	logger.Trace("TxCtrlCmdHandler.Process")
+func (this *TxCtrlCmdHandler) Process(session *netlib.Session, packetid int, data interface{}) error {
+	//logger.Logger.Trace("TxCtrlCmdHandler.Process")
 	if txcmd, ok := data.(*protocol.TransactCtrlCmd); ok {
 		if !transact.ProcessTransCmd(transact.TransNodeID(txcmd.GetTId()), transact.TransCmd(txcmd.GetCmd())) {
 			return errors.New("TxCtrlCmdHandler error, tid=" + strconv.FormatInt(txcmd.GetTId(), 16) + " cmd=" + strconv.Itoa(int(txcmd.GetCmd())))

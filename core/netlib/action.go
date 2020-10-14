@@ -10,26 +10,31 @@ import (
 )
 
 type action struct {
-	s      *Session
-	p      interface{}
-	n      string
-	packid int
+	s       *Session
+	p       interface{}
+	n       string
+	packid  int
+	logicNo uint32
+	next    *action
 }
 
 func (this *action) do() {
-	defer FreeAction(this)
-	defer utils.DumpStackIfPanic(fmt.Sprintf("netlib.session.task.do exe error, packet type:%v", reflect.TypeOf(this.p)))
-
-	watch := profile.TimeStatisticMgr.WatchStart(this.n)
-	defer watch.Stop()
+	watch := profile.TimeStatisticMgr.WatchStart(fmt.Sprintf("/action/%v", this.n), profile.TIME_ELEMENT_ACTION)
+	defer func() {
+		FreeAction(this)
+		if watch != nil {
+			watch.Stop()
+		}
+		utils.DumpStackIfPanic(fmt.Sprintf("netlib.session.task.do exe error, packet type:%v", reflect.TypeOf(this.p)))
+	}()
 
 	h := GetHandler(this.packid)
 	if h != nil {
-		err := h.Process(this.s, this.p)
+		err := h.Process(this.s, this.packid, this.p)
 		if err != nil {
-			logger.Infof("%v process error %v", this.n, err)
+			logger.Logger.Infof("%v process error %v", this.n, err)
 		}
 	} else {
-		logger.Infof("%v not registe handler", this.n)
+		logger.Logger.Infof("%v not registe handler", this.n)
 	}
 }

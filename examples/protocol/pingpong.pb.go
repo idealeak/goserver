@@ -14,24 +14,14 @@ var _ = &json.SyntaxError{}
 var _ = math.Inf
 
 type CSPacketPing struct {
-	PacketId         *PacketID `protobuf:"varint,1,req,enum=protocol.PacketID,def=1000" json:"PacketId,omitempty"`
-	TimeStamb        *int64    `protobuf:"varint,2,req" json:"TimeStamb,omitempty"`
-	Message          []byte    `protobuf:"bytes,3,req" json:"Message,omitempty"`
-	XXX_unrecognized []byte    `json:"-"`
+	TimeStamb        *int64 `protobuf:"varint,1,req" json:"TimeStamb,omitempty"`
+	Message          []byte `protobuf:"bytes,2,req" json:"Message,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
 }
 
 func (m *CSPacketPing) Reset()         { *m = CSPacketPing{} }
 func (m *CSPacketPing) String() string { return proto.CompactTextString(m) }
 func (*CSPacketPing) ProtoMessage()    {}
-
-const Default_CSPacketPing_PacketId PacketID = PacketID_PACKET_CS_PING
-
-func (m *CSPacketPing) GetPacketId() PacketID {
-	if m != nil && m.PacketId != nil {
-		return *m.PacketId
-	}
-	return Default_CSPacketPing_PacketId
-}
 
 func (m *CSPacketPing) GetTimeStamb() int64 {
 	if m != nil && m.TimeStamb != nil {
@@ -48,24 +38,14 @@ func (m *CSPacketPing) GetMessage() []byte {
 }
 
 type SCPacketPong struct {
-	PacketId         *PacketID `protobuf:"varint,1,req,enum=protocol.PacketID,def=1001" json:"PacketId,omitempty"`
-	TimeStamb        *int64    `protobuf:"varint,2,req" json:"TimeStamb,omitempty"`
-	Message          []byte    `protobuf:"bytes,3,req" json:"Message,omitempty"`
-	XXX_unrecognized []byte    `json:"-"`
+	TimeStamb        *int64 `protobuf:"varint,1,req" json:"TimeStamb,omitempty"`
+	Message          []byte `protobuf:"bytes,2,req" json:"Message,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
 }
 
 func (m *SCPacketPong) Reset()         { *m = SCPacketPong{} }
 func (m *SCPacketPong) String() string { return proto.CompactTextString(m) }
 func (*SCPacketPong) ProtoMessage()    {}
-
-const Default_SCPacketPong_PacketId PacketID = PacketID_PACKET_SC_PONG
-
-func (m *SCPacketPong) GetPacketId() PacketID {
-	if m != nil && m.PacketId != nil {
-		return *m.PacketId
-	}
-	return Default_SCPacketPong_PacketId
-}
 
 func (m *SCPacketPong) GetTimeStamb() int64 {
 	if m != nil && m.TimeStamb != nil {

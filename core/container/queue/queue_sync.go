@@ -8,22 +8,21 @@ import (
 
 type queueS struct {
 	fifo *list.List
-	lock *sync.Mutex
+	lock *sync.RWMutex
 }
 
 func NewQueueS() Queue {
 	q := &queueS{
 		fifo: list.New(),
-		lock: new(sync.Mutex),
+		lock: new(sync.RWMutex),
 	}
 	return q
 }
 
 func (q *queueS) Enqueue(i interface{}, timeout time.Duration) bool {
 	q.lock.Lock()
-	defer q.lock.Unlock()
-
 	q.fifo.PushBack(i)
+	q.lock.Unlock()
 	return true
 }
 
@@ -33,19 +32,19 @@ func (q *queueS) Dequeue(timeout time.Duration) (interface{}, bool) {
 	}
 
 	q.lock.Lock()
-	defer q.lock.Unlock()
-
 	e := q.fifo.Front()
 	if e != nil {
 		q.fifo.Remove(e)
+		q.lock.Unlock()
 		return e.Value, true
 	}
-
+	q.lock.Unlock()
 	return nil, false
 }
 
 func (q *queueS) Len() int {
-	q.lock.Lock()
-	defer q.lock.Unlock()
-	return q.fifo.Len()
+	q.lock.RLock()
+	l := q.fifo.Len()
+	q.lock.RUnlock()
+	return l
 }

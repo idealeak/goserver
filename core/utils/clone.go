@@ -11,8 +11,14 @@ func Clone(src interface{}) (dst interface{}) {
 	}
 
 	sv := reflect.Indirect(reflect.ValueOf(src))
+	if !sv.IsValid() {
+		return nil
+	}
 	st := sv.Type()
 	dv := reflect.New(st)
+	if !dv.IsValid() {
+		return nil
+	}
 	deepCopy(sv, dv.Elem(), st)
 	return dv.Interface()
 }
@@ -50,8 +56,10 @@ func deepCopyMap(src, dst reflect.Value, t reflect.Type) {
 			}
 			s := reflect.Indirect(key)
 			d := reflect.Indirect(nkey)
-			tt := s.Type()
-			deepCopy(s, d, tt)
+			if s.IsValid() && d.IsValid() {
+				tt := s.Type()
+				deepCopy(s, d, tt)
+			}
 		} else {
 			nkey = key
 		}
@@ -64,8 +72,10 @@ func deepCopyMap(src, dst reflect.Value, t reflect.Type) {
 			}
 			s := reflect.Indirect(val)
 			d := reflect.Indirect(nval)
-			tt := s.Type()
-			deepCopy(s, d, tt)
+			if s.IsValid() && d.IsValid() {
+				tt := s.Type()
+				deepCopy(s, d, tt)
+			}
 		} else {
 			nval = val
 		}
@@ -84,8 +94,10 @@ func deepCopySlice(src, dst reflect.Value, t reflect.Type) {
 		}
 		sf = reflect.Indirect(sf)
 		df = reflect.Indirect(df)
-		tt := sf.Type()
-		deepCopy(sf, df, tt)
+		if sf.IsValid() && df.IsValid() {
+			tt := sf.Type()
+			deepCopy(sf, df, tt)
+		}
 	}
 }
 
@@ -109,8 +121,10 @@ func deepCopyStruct(src, dst reflect.Value, t reflect.Type) {
 			}
 			sf := reflect.Indirect(sv)
 			df := reflect.Indirect(dst.Field(i))
-			tt := sf.Type()
-			deepCopy(sf, df, tt)
+			if sf.IsValid() && df.IsValid() {
+				tt := sf.Type()
+				deepCopy(sf, df, tt)
+			}
 		}
 	}
 }

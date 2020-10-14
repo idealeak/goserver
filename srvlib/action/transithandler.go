@@ -23,12 +23,12 @@ func (this *PacketTransitPacketFactory) CreatePacket() interface{} {
 	return pack
 }
 
-func (this *PacketTransitHandler) Process(s *netlib.Session, data interface{}) error {
-	logger.Trace("PacketTransitHandler.Process")
+func (this *PacketTransitHandler) Process(s *netlib.Session, packetid int, data interface{}) error {
+	logger.Logger.Trace("PacketTransitHandler.Process")
 	if pr, ok := data.(*protocol.SSPacketTransit); ok {
 		targetS := srvlib.ServerSessionMgrSington.GetSession(int(pr.GetSArea()), int(pr.GetSType()), int(pr.GetSId()))
 		if targetS != nil {
-			targetS.Send(pr.GetData())
+			targetS.Send(int(pr.GetPacketId()), pr.GetData())
 		}
 	}
 	return nil

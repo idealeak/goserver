@@ -16,13 +16,13 @@ func (trc *termReqCommand) Done(o *Object) error {
 	}
 
 	//  If I/O object is well and alive let's ask it to terminate.
-	if _, exist := o.childs[trc.c.Id]; exist {
+	if o.childs.IsExist(trc.c.Id) {
 		o.termAcks++
 		//  Note that this object is the root of the (partial shutdown) thus, its
 		//  value of linger is used, rather than the value stored by the children.
 		SendTerm(trc.c)
 		//	Remove child
-		delete(o.childs, trc.c.Id)
+		o.childs.Delete(trc.c.Id)
 	}
 
 	return nil

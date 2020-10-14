@@ -1,5 +1,7 @@
 package basic
 
+import "github.com/idealeak/goserver/core/container"
+
 type ownCommand struct {
 	c *Object
 }
@@ -18,9 +20,9 @@ func (oc *ownCommand) Done(o *Object) error {
 
 	//  Store the reference to the owned object.
 	if o.childs == nil {
-		o.childs = make(map[int]*Object)
+		o.childs = container.NewSynchronizedMap()
 	}
-	o.childs[oc.c.Id] = oc.c
+	o.childs.Set(oc.c.Id, oc.c)
 
 	return nil
 }

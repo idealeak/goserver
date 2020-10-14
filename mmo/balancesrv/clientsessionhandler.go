@@ -2,9 +2,9 @@ package main
 
 import (
 	"code.google.com/p/goprotobuf/proto"
-	"games.zzinfor.com/pocketgamecity/protocol"
 	"github.com/idealeak/goserver/core/logger"
 	"github.com/idealeak/goserver/core/netlib"
+	"github.com/idealeak/goserver/mmo/protocol"
 	"github.com/idealeak/goserver/srvlib"
 )
 
@@ -19,6 +19,7 @@ type gateService struct {
 }
 
 type SessionHandlerClientBalance struct {
+	netlib.BasicSessionHandler
 	gates map[int32]*gateService
 }
 
@@ -31,13 +32,13 @@ func (sfcb *SessionHandlerClientBalance) GetInterestOps() uint {
 }
 
 func (sfcb *SessionHandlerClientBalance) OnSessionOpened(s *netlib.Session) {
-	logger.Trace("SessionHandlerClientBalance.OnSessionOpened")
+	logger.Logger.Trace("SessionHandlerClientBalance.OnSessionOpened")
 	services := srvlib.ServiceMgr.GetServices(srvlib.ClientServiceType)
 	if services != nil {
 		/*清理掉线的gate*/
 		for k, _ := range sfcb.gates {
 			if _, has := services[k]; !has {
-				logger.Trace("gate leave: ", k)
+				logger.Logger.Trace("gate leave: ", k)
 				delete(sfcb.gates, k)
 			}
 		}
@@ -45,7 +46,7 @@ func (sfcb *SessionHandlerClientBalance) OnSessionOpened(s *netlib.Session) {
 		for k, v := range services {
 			if _, has := sfcb.gates[k]; !has {
 				sfcb.gates[k] = &gateService{active: true}
-				logger.Trace("new gate come in: ", k, v)
+				logger.Logger.Trace("new gate come in: ", k, v)
 			}
 		}
 	}
@@ -69,22 +70,11 @@ func (sfcb *SessionHandlerClientBalance) OnSessionOpened(s *netlib.Session) {
 		pack.Port = proto.Int32(mls.GetPort())
 	}
 	proto.SetDefaults(pack)
-	s.Send(pack)
-	logger.Trace(pack)
+	s.Send(int(protocol.MmoPacketID_PACKET_SC_GATEINFO), pack)
+	logger.Logger.Trace(pack)
 	s.Close()
 }
 
-func (sfcb *SessionHandlerClientBalance) OnSessionClosed(s *netlib.Session) {
-}
-
-func (sfcb *SessionHandlerClientBalance) OnSessionIdle(s *netlib.Session) {
-}
-
-func (sfcb *SessionHandlerClientBalance) OnPacketReceived(s *netlib.Session, packetid int, packet interface{}) {
-}
-
-func (sfcb *SessionHandlerClientBalance) OnPacketSent(s *netlib.Session, data []byte) {
-}
 
 func init() {
 	netlib.RegisteSessionHandlerCreator(SessionHandlerClientBalanceName, func() netlib.SessionHandler {
@@ -95,17 +85,17 @@ func init() {
 		return &protocol.ServerLoad{}
 	}))
 
-	netlib.RegisterHandler(int(protocol.MmoPacketID_PACKET_GB_CUR_LOAD), netlib.HandlerWrapper(func(s *netlib.Session, pack interface{}) error {
+	netlib.RegisterHandler(int(protocol.MmoPacketID_PACKET_GB_CUR_LOAD), netlib.HandlerWrapper(func(s *netlib.Session, packetid int, pack interface{}) error {
 		if sr, ok := pack.(*protocol.ServerLoad); ok {
 			srvid := sr.GetSrvId()
 			if v, has := SessionHandlerClientBalanceMgr.gates[srvid]; has {
 				v.load = int(sr.GetCurLoad())
-				logger.Trace("receive gate load info 1, sid=", srvid, " load=", v.load)
+				logger.Logger.Trace("receive gate load info 1, sid=", srvid, " load=", v.load)
 			} else {
 				services := srvlib.ServiceMgr.GetServices(srvlib.ClientServiceType)
 				if _, has := services[srvid]; has {
 					SessionHandlerClientBalanceMgr.gates[srvid] = &gateService{active: true, load: int(sr.GetCurLoad())}
-					logger.Trace("receive gate load info 2, sid=", srvid, " load=", sr.GetCurLoad())
+					logger.Logger.Trace("receive gate load info 2, sid=", srvid, " load=", sr.GetCurLoad())
 				}
 			}
 		}

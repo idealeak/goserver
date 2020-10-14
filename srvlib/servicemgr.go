@@ -18,8 +18,19 @@ var (
 	ServiceMgr                  = &serviceMgr{servicesPool: make(map[int32]map[int32]*protocol.ServiceInfo)}
 )
 
+type ServiceRegisteListener interface {
+	OnRegiste([]*protocol.ServiceInfo)
+	OnUnregiste(*protocol.ServiceInfo)
+}
+
 type serviceMgr struct {
 	servicesPool map[int32]map[int32]*protocol.ServiceInfo
+	listeners    []ServiceRegisteListener
+}
+
+func (this *serviceMgr) AddListener(l ServiceRegisteListener) ServiceRegisteListener {
+	this.listeners = append(this.listeners, l)
+	return l
 }
 
 func (this *serviceMgr) RegisteService(s *netlib.Session, services []*protocol.ServiceInfo) {
@@ -34,15 +45,23 @@ func (this *serviceMgr) RegisteService(s *netlib.Session, services []*protocol.S
 		if _, has := this.servicesPool[srvtype]; !has {
 			this.servicesPool[srvtype] = make(map[int32]*protocol.ServiceInfo)
 		}
-		this.servicesPool[srvtype][srvid] = service
-		logger.Trace("(this *serviceMgr) RegisteService: ", service.GetSrvName(), " Ip=", service.GetIp(), " Port=", service.GetPort())
-		pack := &protocol.SSServiceInfo{}
-		pack.Service = service
-		proto.SetDefaults(pack)
-		sessiontypes := GetCareSessionsByService(service.GetSrvType())
-		areaId := service.GetAreaId()
-		for _, v1 := range sessiontypes {
-			ServerSessionMgrSington.Broadcast(pack, int(areaId), int(v1))
+		if _, exist := this.servicesPool[srvtype][srvid]; !exist {
+			this.servicesPool[srvtype][srvid] = service
+			logger.Logger.Info("(this *serviceMgr) RegisteService: ", service.GetSrvName(), " Ip=", service.GetIp(), " Port=", service.GetPort())
+			pack := &protocol.SSServiceInfo{}
+			pack.Service = service
+			proto.SetDefaults(pack)
+			sessiontypes := GetCareSessionsByService(service.GetSrvType())
+			areaId := service.GetAreaId()
+			for _, v1 := range sessiontypes {
+				ServerSessionMgrSington.Broadcast(int(protocol.SrvlibPacketID_PACKET_SS_SERVICE_INFO), pack, int(areaId), int(v1))
+			}
+
+			if len(this.listeners) != 0 {
+				for _, l := range this.listeners {
+					l.OnRegiste(services)
+				}
+			}
 		}
 	}
 }
@@ -55,18 +74,25 @@ func (this *serviceMgr) UnregisteService(service *protocol.ServiceInfo) {
 	srvid := service.GetSrvId()
 	srvtype := service.GetSrvType()
 	if v, has := this.servicesPool[srvtype]; has {
-		delete(v, srvid)
-		logger.Trace("(this *serviceMgr) UnregisteService: ",srvid)
+		if ss, exist := v[srvid]; exist && ss == service {
+			delete(v, srvid)
+			logger.Logger.Info("(this *serviceMgr) UnregisteService: ", srvid)
+			pack := &protocol.SSServiceShut{}
+			pack.Service = service
+			proto.SetDefaults(pack)
+			sessiontypes := GetCareSessionsByService(service.GetSrvType())
+			areaId := service.GetAreaId()
+			for _, v1 := range sessiontypes {
+				ServerSessionMgrSington.Broadcast(int(protocol.SrvlibPacketID_PACKET_SS_SERVICE_SHUT), pack, int(areaId), int(v1))
+			}
+			if len(this.listeners) != 0 {
+				for _, l := range this.listeners {
+					l.OnUnregiste(service)
+				}
+			}
+		}
 	}
 
-	pack := &protocol.SSServiceShut{}
-	pack.Service = service
-	proto.SetDefaults(pack)
-	sessiontypes := GetCareSessionsByService(service.GetSrvType())
-	areaId := service.GetAreaId()
-	for _, v1 := range sessiontypes {
-		ServerSessionMgrSington.Broadcast(pack, int(areaId), int(v1))
-	}
 }
 
 func (this *serviceMgr) OnRegiste(s *netlib.Session) {
@@ -88,8 +114,8 @@ func (this *serviceMgr) OnRegiste(s *netlib.Session) {
 							pack := &protocol.SSServiceInfo{}
 							proto.SetDefaults(pack)
 							pack.Service = si
-							logger.Trace("serviceMgr.OnRegiste Server Type=", sInfo.GetType(), " Id=", sInfo.GetId(), " Name=", sInfo.GetName(), " careful => Service=", si)
-							s.Send(pack)
+							logger.Logger.Info("serviceMgr.OnRegiste Server Type=", sInfo.GetType(), " Id=", sInfo.GetId(), " Name=", sInfo.GetName(), " careful => Service=", si)
+							s.Send(int(protocol.SrvlibPacketID_PACKET_SS_SERVICE_INFO), pack)
 						}(v3, srvInfo)
 					}
 				}
@@ -174,7 +200,7 @@ func (this *serviceMgr) ReportService(s *netlib.Session) {
 			}
 			pack.Services = append(pack.Services, si)
 		}
-		s.Send(pack)
+		s.Send(int(protocol.SrvlibPacketID_PACKET_SS_SERVICE_REGISTE), pack)
 	}
 }
 
@@ -185,13 +211,22 @@ func (this *serviceMgr) GetServices(srvtype int32) map[int32]*protocol.ServiceIn
 	return nil
 }
 
+func (this *serviceMgr) GetService(srvtype, srvid int32) *protocol.ServiceInfo {
+	if v, has := this.servicesPool[srvtype]; has {
+		if vv, has := v[srvid]; has {
+			return vv
+		}
+	}
+	return nil
+}
+
 func init() {
 
 	// service registe
 	netlib.RegisterFactory(int(protocol.SrvlibPacketID_PACKET_SS_SERVICE_REGISTE), netlib.PacketFactoryWrapper(func() interface{} {
 		return &protocol.SSServiceRegiste{}
 	}))
-	netlib.RegisterHandler(int(protocol.SrvlibPacketID_PACKET_SS_SERVICE_REGISTE), netlib.HandlerWrapper(func(s *netlib.Session, pack interface{}) error {
+	netlib.RegisterHandler(int(protocol.SrvlibPacketID_PACKET_SS_SERVICE_REGISTE), netlib.HandlerWrapper(func(s *netlib.Session, packetid int, pack interface{}) error {
 		if sr, ok := pack.(*protocol.SSServiceRegiste); ok {
 			ServiceMgr.RegisteService(s, sr.GetServices())
 		}
@@ -202,7 +237,7 @@ func init() {
 	netlib.RegisterFactory(int(protocol.SrvlibPacketID_PACKET_SS_SERVICE_INFO), netlib.PacketFactoryWrapper(func() interface{} {
 		return &protocol.SSServiceInfo{}
 	}))
-	netlib.RegisterHandler(int(protocol.SrvlibPacketID_PACKET_SS_SERVICE_INFO), netlib.HandlerWrapper(func(s *netlib.Session, pack interface{}) error {
+	netlib.RegisterHandler(int(protocol.SrvlibPacketID_PACKET_SS_SERVICE_INFO), netlib.HandlerWrapper(func(s *netlib.Session, packetid int, pack interface{}) error {
 		if sr, ok := pack.(*protocol.SSServiceInfo); ok {
 			service := sr.GetService()
 			if service != nil {
@@ -239,13 +274,13 @@ func init() {
 					Path:            service.GetPath(),
 				}
 				if !sc.AllowMultiConn && netlib.ConnectorMgr.IsConnecting(sc) {
-					logger.Warnf("%v:%v %v:%v had connected, not allow multiple connects", sc.Id, sc.Name, sc.Ip, sc.Port)
+					logger.Logger.Warnf("%v:%v %v:%v had connected, not allow multiple connects", sc.Id, sc.Name, sc.Ip, sc.Port)
 					return nil
 				}
 				sc.Init()
 				err := netlib.Connect(sc)
 				if err != nil {
-					logger.Warn("connect server failed err:", err)
+					logger.Logger.Warn("connect server failed err:", err)
 				}
 			}
 		}
@@ -256,7 +291,7 @@ func init() {
 	netlib.RegisterFactory(int(protocol.SrvlibPacketID_PACKET_SS_SERVICE_SHUT), netlib.PacketFactoryWrapper(func() interface{} {
 		return &protocol.SSServiceShut{}
 	}))
-	netlib.RegisterHandler(int(protocol.SrvlibPacketID_PACKET_SS_SERVICE_SHUT), netlib.HandlerWrapper(func(s *netlib.Session, pack interface{}) error {
+	netlib.RegisterHandler(int(protocol.SrvlibPacketID_PACKET_SS_SERVICE_SHUT), netlib.HandlerWrapper(func(s *netlib.Session, packetid int, pack interface{}) error {
 		if sr, ok := pack.(*protocol.SSServiceShut); ok {
 			service := sr.GetService()
 			if service != nil {

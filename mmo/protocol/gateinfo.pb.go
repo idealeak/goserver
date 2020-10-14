@@ -14,27 +14,17 @@ var _ = &json.SyntaxError{}
 var _ = math.Inf
 
 type SCGateInfo struct {
-	PacketId         *MmoPacketID `protobuf:"varint,1,req,enum=protocol.MmoPacketID,def=1002" json:"PacketId,omitempty"`
-	SrvType          *int32       `protobuf:"varint,2,opt" json:"SrvType,omitempty"`
-	SrvId            *int32       `protobuf:"varint,3,opt" json:"SrvId,omitempty"`
-	AuthKey          *string      `protobuf:"bytes,4,opt" json:"AuthKey,omitempty"`
-	Ip               *string      `protobuf:"bytes,5,opt" json:"Ip,omitempty"`
-	Port             *int32       `protobuf:"varint,6,opt" json:"Port,omitempty"`
-	XXX_unrecognized []byte       `json:"-"`
+	SrvType          *int32  `protobuf:"varint,1,opt" json:"SrvType,omitempty"`
+	SrvId            *int32  `protobuf:"varint,2,opt" json:"SrvId,omitempty"`
+	AuthKey          *string `protobuf:"bytes,3,opt" json:"AuthKey,omitempty"`
+	Ip               *string `protobuf:"bytes,4,opt" json:"Ip,omitempty"`
+	Port             *int32  `protobuf:"varint,5,opt" json:"Port,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
 }
 
 func (m *SCGateInfo) Reset()         { *m = SCGateInfo{} }
 func (m *SCGateInfo) String() string { return proto.CompactTextString(m) }
 func (*SCGateInfo) ProtoMessage()    {}
-
-const Default_SCGateInfo_PacketId MmoPacketID = MmoPacketID_PACKET_SC_GATEINFO
-
-func (m *SCGateInfo) GetPacketId() MmoPacketID {
-	if m != nil && m.PacketId != nil {
-		return *m.PacketId
-	}
-	return Default_SCGateInfo_PacketId
-}
 
 func (m *SCGateInfo) GetSrvType() int32 {
 	if m != nil && m.SrvType != nil {

@@ -1,12 +1,19 @@
 package protocol;
 
-import "protocol/packetid.proto";
 
 message SCGateInfo {
-	required MmoPacketID PacketId = 1 [default=PACKET_SC_GATEINFO];
-	optional int32 SrvType = 2;
-	optional int32 SrvId = 3;
-	optional string AuthKey = 4;
-	optional string Ip = 5;
-	optional int32 Port = 6;
+	optional int32 SrvType = 1;
+	optional int32 SrvId = 2;
+	optional string AuthKey = 3;
+	optional string Ip = 4;
+	optional int32 Port = 5;
+}
+
+message CSSessionBundle {
+	required string Key = 1;
+	required int64 Ts = 2;
+}
+
+message CSSessionAck {
+	required uint32 LogicNo = 1;
 }

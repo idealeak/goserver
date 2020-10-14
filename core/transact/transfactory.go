@@ -20,6 +20,6 @@ func RegisteHandler(tt TransType, th TransHandler) {
 		panic(fmt.Sprintf("TransHandlerFactory repeate registe handler, type=%v", tt))
 		return
 	}
-	logger.Trace("transact.RegisteHandler:", tt)
+	logger.Logger.Trace("transact.RegisteHandler:", tt)
 	transactionHandlerPool[tt] = th
 }

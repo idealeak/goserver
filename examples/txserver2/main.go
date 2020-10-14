@@ -11,5 +11,5 @@ func main() {
 	core.LoadPackages("config.json")
 
 	waiter := module.Start()
-	waiter.Wait()
+	waiter.Wait("main")
 }

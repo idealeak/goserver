@@ -1,15 +1,19 @@
 package schedule
 
 import (
+	"fmt"
 	"log"
 	"math"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/idealeak/goserver/core"
+	"github.com/idealeak/goserver/core/profile"
 	"github.com/idealeak/goserver/core/utils"
+	"sync/atomic"
 )
 
 // bounds provides a range of acceptable values (plus a map of name to value).
@@ -18,10 +22,20 @@ type bounds struct {
 	names    map[string]uint
 }
 
+type TaskStats struct {
+	RunTimes int64
+	ErrTimes int64
+	Prev     time.Time
+	Next     time.Time
+}
+
 // The bounds for each field.
 var (
-	AdminTaskList map[string]Tasker
+	taskStats     = new(sync.Map)
+	adminTaskList map[string]Tasker
+	lock          sync.Mutex
 	stop          chan bool
+	resume        chan bool
 	seconds       = bounds{0, 59, nil}
 	minutes       = bounds{0, 59, nil}
 	hours         = bounds{0, 23, nil}
@@ -112,11 +126,37 @@ func (tk *Task) GetStatus() string {
 
 func (tk *Task) Run() error {
 	defer utils.DumpStackIfPanic("Task Run")
-	core.CoreObject().Waitor.Add(1)
-	defer core.CoreObject().Waitor.Done()
+	name := fmt.Sprintf("Task(%v)", tk.Taskname)
+	core.CoreObject().Waitor.Add(name, 1)
+	defer core.CoreObject().Waitor.Done(name)
+
+	var stats *TaskStats
+	s, exist := taskStats.Load(tk.Taskname)
+	if s == nil || !exist {
+		stats = &TaskStats{
+			Prev:     tk.Prev,
+			Next:     tk.Next,
+			RunTimes: 1,
+		}
+		taskStats.Store(tk.Taskname, stats)
+	} else {
+		stats = s.(*TaskStats)
+		if stats != nil {
+			atomic.AddInt64(&stats.RunTimes, 1)
+		}
+	}
+
+	//监控运行时间
+	watch := profile.TimeStatisticMgr.WatchStart(fmt.Sprintf("/job/%v/run", tk.Taskname), profile.TIME_ELEMENT_JOB)
+	if watch != nil {
+		defer watch.Stop()
+	}
 
 	err := tk.DoFunc()
 	if err != nil {
+		if stats != nil {
+			atomic.AddInt64(&stats.ErrTimes, 1)
+		}
 		if tk.ErrLimit > 0 && tk.ErrLimit > len(tk.Errlist) {
 			tk.Errlist = append(tk.Errlist, &taskerr{t: tk.Next, errinfo: err.Error()})
 		}
@@ -360,23 +400,54 @@ func StartTask() {
 	go run()
 }
 
+func GetTask(name string) Tasker {
+	lock.Lock()
+	if task, exist := adminTaskList[name]; exist {
+		lock.Unlock()
+		return task
+	}
+	lock.Unlock()
+	return nil
+}
+
+func GetAllTask() map[string]Tasker {
+	ret := make(map[string]Tasker)
+	lock.Lock()
+	for name, task := range adminTaskList {
+		ret[name] = task
+	}
+	lock.Unlock()
+	return ret
+}
+
 func run() {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("!!!schedule run err:", err)
+		}
+	}()
 	now := time.Now().Local()
-	for _, t := range AdminTaskList {
+	lock.Lock()
+	for _, t := range adminTaskList {
 		t.SetNext(now)
 	}
+	lock.Unlock()
 
 	for {
-		sortList := NewMapSorter(AdminTaskList)
+		lock.Lock()
+		taskCnt := len(adminTaskList)
+		sortList := NewMapSorter(adminTaskList)
+		lock.Unlock()
 		sortList.Sort()
 		var effective time.Time
-		if len(AdminTaskList) == 0 || sortList.Vals[0].GetNext().IsZero() {
+		if taskCnt == 0 || sortList.Vals[0].GetNext().IsZero() {
 			// If there are no entries yet, just sleep - it still handles new entries
 			// and stop requests.
 			effective = now.AddDate(10, 0, 0)
 		} else {
 			effective = sortList.Vals[0].GetNext()
 		}
+
 		select {
 		case now = <-time.After(effective.Sub(now)):
 			// Run every entry whose next time was this effective time.
@@ -389,6 +460,9 @@ func run() {
 				e.SetNext(effective)
 			}
 			continue
+		case <-resume:
+			now = time.Now().Local()
+			continue
 		case <-stop:
 			return
 		}
@@ -400,7 +474,20 @@ func StopTask() {
 }
 
 func AddTask(taskname string, t Tasker) {
-	AdminTaskList[taskname] = t
+	lock.Lock()
+	adminTaskList[taskname] = t
+	t.SetNext(time.Now().Local())
+	lock.Unlock()
+	select {
+	case resume <- true:
+	default:
+	}
+}
+
+func DelTask(taskname string) {
+	lock.Lock()
+	delete(adminTaskList, taskname)
+	lock.Unlock()
 }
 
 //sort map for tasker
@@ -549,7 +636,20 @@ func all(r bounds) uint64 {
 	return getBits(r.min, r.max, 1) | starBit
 }
 
+// task stats
+func Stats() map[string]TaskStats {
+	stats := make(map[string]TaskStats)
+	taskStats.Range(func(k, v interface{}) bool {
+		if s, ok := v.(*TaskStats); ok {
+			stats[k.(string)] = *s
+		}
+		return true
+	})
+	return stats
+}
+
 func init() {
-	AdminTaskList = make(map[string]Tasker)
+	adminTaskList = make(map[string]Tasker)
 	stop = make(chan bool)
+	resume = make(chan bool, 10)
 }

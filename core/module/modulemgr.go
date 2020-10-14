@@ -4,9 +4,11 @@ import (
 	"container/list"
 	"time"
 
+	"fmt"
 	"github.com/idealeak/goserver/core"
 	"github.com/idealeak/goserver/core/basic"
 	"github.com/idealeak/goserver/core/logger"
+	"github.com/idealeak/goserver/core/profile"
 	"github.com/idealeak/goserver/core/utils"
 )
 
@@ -19,7 +21,7 @@ const (
 	ModuleStateWaitShutdown
 	ModuleStateFini
 	///other
-	ModuleMaxCount = 1000
+	ModuleMaxCount = 1024
 )
 
 var (
@@ -48,6 +50,9 @@ type ModuleMgr struct {
 	waitShutAct   chan interface{}
 	waitShutCnt   int
 	waitShut      bool
+	currTimeSec   int64
+	currTimeNano  int64
+	currTime      time.Time
 }
 
 func newModuleMgr() *ModuleMgr {
@@ -62,7 +67,20 @@ func newModuleMgr() *ModuleMgr {
 	return mm
 }
 
+func (this *ModuleMgr) GetCurrTime() time.Time {
+	return this.currTime
+}
+
+func (this *ModuleMgr) GetCurrTimeSec() int64 {
+	return this.currTimeSec
+}
+
+func (this *ModuleMgr) GetCurrTimeNano() int64 {
+	return this.currTimeNano
+}
+
 func (this *ModuleMgr) RegisteModule(m Module, tickInterval time.Duration, priority int) {
+	logger.Logger.Infof("module [%16s] registe;interval=%v,priority=%v", m.ModuleName(), tickInterval, priority)
 	mentiry := &ModuleEntity{
 		lastTick:     time.Now(),
 		tickInterval: tickInterval,
@@ -124,13 +142,13 @@ func (this *ModuleMgr) UnregistePreloadModule(m PreloadModule) {
 }
 
 func (this *ModuleMgr) Start() *utils.Waitor {
-	logger.Trace("Startup PreloadModules")
+	logger.Logger.Info("Startup PreloadModules")
 	for e := this.preloadModule.Front(); e != nil; e = e.Next() {
 		if me, ok := e.Value.(*PreloadModuleEntity); ok {
 			me.module.Start()
 		}
 	}
-	logger.Trace("Startup PreloadModules [ok]")
+	logger.Logger.Info("Startup PreloadModules [ok]")
 
 	this.Object = basic.NewObject(core.ObjId_CoreId,
 		"core",
@@ -138,11 +156,11 @@ func (this *ModuleMgr) Start() *utils.Waitor {
 		this)
 	this.UserData = this
 	core.LaunchChild(this.Object)
-
+	core.AppCtx.CoreObj = this.Object
 	this.state = ModuleStateInit
 	//给模块预留调度的空间，防止主线程直接跑过去
 	select {
-		case <-time.After(time.Second):
+	case <-time.After(time.Second):
 	}
 	return this.Object.Waitor
 }
@@ -152,13 +170,13 @@ func (this *ModuleMgr) Close() {
 }
 
 func (this *ModuleMgr) init() {
-	logger.Trace("Start Initialize Modules")
-	defer logger.Trace("Start Initialize Modules [ok]")
+	logger.Logger.Info("Start Initialize Modules")
+	defer logger.Logger.Info("Start Initialize Modules [ok]")
 	for e := this.modules.Front(); e != nil; e = e.Next() {
 		if me, ok := e.Value.(*ModuleEntity); ok && !me.quited {
-			logger.Trace(me.module.ModuleName(), " Init...")
-			me.module.Init()
-			logger.Trace(me.module.ModuleName(), " Init [ok]")
+			logger.Logger.Infof("module [%16s] init...", me.module.ModuleName())
+			me.safeInit()
+			logger.Logger.Infof("module [%16s] init[ok]", me.module.ModuleName())
 		}
 	}
 	this.state = ModuleStateRun
@@ -166,6 +184,9 @@ func (this *ModuleMgr) init() {
 
 func (this *ModuleMgr) update() {
 	nowTime := time.Now()
+	this.currTime = nowTime
+	this.currTimeSec = nowTime.Unix()
+	this.currTimeNano = nowTime.UnixNano()
 	for e := this.modules.Front(); e != nil; e = e.Next() {
 		if me, ok := e.Value.(*ModuleEntity); ok && !me.quited {
 			me.safeUpt(nowTime)
@@ -177,22 +198,23 @@ func (this *ModuleMgr) shutdown() {
 	if this.waitShut {
 		return
 	}
+	logger.Logger.Info("ModuleMgr shutdown()")
 	this.waitShut = true
-
+	this.state = ModuleStateWaitShutdown
 	for e := this.modules.Front(); e != nil; e = e.Next() {
 		if me, ok := e.Value.(*ModuleEntity); ok {
+			logger.Logger.Infof("module [%16s] shutdown...", me.module.ModuleName())
 			me.safeShutdown(this.waitShutAct)
+			logger.Logger.Infof("module [%16s] shutdown[ok]", me.module.ModuleName())
 			this.waitShutCnt++
 		}
 	}
-
-	this.state = ModuleStateWaitShutdown
 }
 
 func (this *ModuleMgr) checkShutdown() bool {
 	select {
 	case param := <-this.waitShutAct:
-		logger.Trace(param, " shutdowned")
+		logger.Logger.Infof("module [%16s] shutdowned", param)
 		if name, ok := param.(string); ok {
 			me := this.getModuleEntityByName(name)
 			if me != nil && !me.quited {
@@ -200,7 +222,16 @@ func (this *ModuleMgr) checkShutdown() bool {
 				this.waitShutCnt--
 			}
 		}
-	default:
+	case _ = <-time.After(time.Second):
+		logger.Logger.Trace("ModuleMgr.checkShutdown wait...")
+		for e := this.modules.Front(); e != nil; e = e.Next() {
+			if me, ok := e.Value.(*ModuleEntity); ok {
+				if me.quited == false {
+					logger.Logger.Infof("Module [%v] wait shutdown...", me.module.ModuleName())
+				}
+			}
+		}
+		//default:
 	}
 	if this.waitShutCnt == 0 {
 		this.state = ModuleStateFini
@@ -229,6 +260,8 @@ func (this *ModuleMgr) tick() {
 func (this *ModuleMgr) fini() {
 	core.Terminate(this.Object)
 	this.state = ModuleStateInvalid
+	logger.Logger.Info("=============ModuleMgr fini=============")
+	logger.Logger.Flush()
 }
 
 func (this *ModuleMgr) getModuleEntityByName(name string) *ModuleEntity {
@@ -245,11 +278,20 @@ func (this *ModuleMgr) GetModuleByName(name string) Module {
 	return nil
 }
 
+func (this *ModuleEntity) safeInit() {
+	defer utils.DumpStackIfPanic("ModuleEntity.safeInit")
+	this.module.Init()
+}
+
 func (this *ModuleEntity) safeUpt(nowTime time.Time) {
 	defer utils.DumpStackIfPanic("ModuleEntity.safeTick")
 
-	if nowTime.Sub(this.lastTick) > this.tickInterval {
+	if this.tickInterval == 0 || nowTime.Sub(this.lastTick) >= this.tickInterval {
 		this.lastTick = nowTime
+		watch := profile.TimeStatisticMgr.WatchStart(fmt.Sprintf("/module/%v/update", this.module.ModuleName()), profile.TIME_ELEMENT_MODULE)
+		if watch != nil {
+			defer watch.Stop()
+		}
 		this.module.Update()
 	}
 }
@@ -280,7 +322,7 @@ func UnregisteModule(m Module) {
 func Start() *utils.Waitor {
 	err := core.ExecuteHook(core.HOOK_BEFORE_START)
 	if err != nil {
-		logger.Error("ExecuteHook(HOOK_BEFORE_START) error", err)
+		logger.Logger.Error("ExecuteHook(HOOK_BEFORE_START) error", err)
 	}
 	return AppModule.Start()
 }
@@ -289,6 +331,6 @@ func Stop() {
 	AppModule.Close()
 	err := core.ExecuteHook(core.HOOK_AFTER_STOP)
 	if err != nil {
-		logger.Error("ExecuteHook(HOOK_BEFORE_START) error", err)
+		logger.Logger.Error("ExecuteHook(HOOK_BEFORE_START) error", err)
 	}
 }

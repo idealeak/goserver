@@ -41,7 +41,7 @@ func (blf *BlackListFilter) OnSessionIdle(s *netlib.Session) bool {
 	return true
 }
 
-func (blf *BlackListFilter) OnPacketReceived(s *netlib.Session, packetid int, packet interface{}) bool {
+func (blf *BlackListFilter) OnPacketReceived(s *netlib.Session, packetid int, logicNo uint32, packet interface{}) bool {
 	if blf.isBlock(s) {
 		blf.blockSession(s)
 		return false
@@ -49,7 +49,7 @@ func (blf *BlackListFilter) OnPacketReceived(s *netlib.Session, packetid int, pa
 	return true
 }
 
-func (blf *BlackListFilter) OnPacketSent(s *netlib.Session, data []byte) bool {
+func (blf *BlackListFilter) OnPacketSent(s *netlib.Session, packetid int, logicNo uint32, data []byte) bool {
 	if blf.isBlock(s) {
 		blf.blockSession(s)
 		return false
